@@ -49,7 +49,7 @@ public class Tintolmarket {
             System.exit(-1);
         }
 
-        // inputs
+        client.run();
 
         // client.sendFile();
 
@@ -59,6 +59,7 @@ public class Tintolmarket {
             System.err.println(e.getMessage());
             System.exit(-1);
         }
+
     }
 
     public Socket connectClient(String host, int port) {
@@ -93,10 +94,54 @@ public class Tintolmarket {
         return isUser;
     }
 
-    /* private */
+    private void run() {
+        Scanner scanner = new Scanner(System.in);
+        while (scanner.hasNextLine()) {
+            String command = scanner.nextLine();
+            switch (command) {
+                case "a":
+                case "add":
+                    // add logic
+                    break;
+                case "s":
+                case "sell":
+                    // add logic
+                    break;
+                case "v":
+                case "view":
+                    // add logic
+                    break;
+                case "b":
+                case "buy":
+                    // add logic
+                    break;
+                case "w":
+                case "wallet":
+                    // add logic
+                    break;
+                case "c":
+                case "classify":
+                    // add logic
+                    break;
+                case "t":
+                case "talk":
+                    // add logic
+                    break;
+                case "r":
+                case "read":
+                    // add logic
+                    break;
+                default:
+                    // Exit Code
+                    scanner.close();
+                    return;
+            }
+            printCommands();
+        }
+    }
 
     private static void printCommands() {
-        System.out.println("Lista de comandos: ");
+        System.out.println("Lista de comandos:");
         System.out.println("\tadd <wine> <image>");
         System.out.println("\tsell <wine> <value> <quantity>");
         System.out.println("\tview <wine>");

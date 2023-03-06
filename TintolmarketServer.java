@@ -121,8 +121,11 @@ public class TintolmarketServer {
 					e1.printStackTrace();
 				}
 
-				// authentication
-				outStream.writeObject(authenticate(outStream, user, password));
+				boolean authentication = authenticate(outStream, user, password);
+
+				// loop with functionalities
+
+				outStream.writeObject(authentication);
 				outStream.close();
 				inStream.close();
 
