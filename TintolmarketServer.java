@@ -18,16 +18,20 @@ import java.nio.file.Files;
 public class TintolmarketServer {
 
 	public static void main(String[] args) {
+
 		System.out.println("servidor: main");
 		TintolmarketServer server = new TintolmarketServer();
-		server.startServer();
+		if (args.length >= 0) {
+			server.startServer(Integer.valueOf(args[0]));
+		}
+		server.startServer(12345);
 	}
 
-	public void startServer() {
+	public void startServer(int port) {
 		ServerSocket sSoc = null;
 
 		try {
-			sSoc = new ServerSocket(23456);
+			sSoc = new ServerSocket(port);
 		} catch (IOException e) {
 			System.err.println(e.getMessage());
 			System.exit(-1);
