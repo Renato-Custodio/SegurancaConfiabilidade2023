@@ -40,33 +40,31 @@ public class Tintolmarket {
             System.out.print("Introduza a password por favor : ");
             Scanner reader = new Scanner(System.in);
             password = reader.nextLine();
+            reader.close();
         }
 
-        client.login(userID, password);
+        if (client.login(userID, password)) {
+            System.out.println("Lista de comandos: ");
+            System.out.println("add <wine> <image>");
+            System.out.println("sell <wine> <value> <quantity>");
+            System.out.println("view <wine>");
+            System.out.println("buy <wine> <seller> <quantity>");
+            System.out.println("wallet");
+            System.out.println("classify <wine> <stars>");
+            System.out.println("talk <user> <message>");
+            System.out.println("read");
+
+        } else {
+            System.err.println();
+            System.err.println("Erro : password invalida");
+            System.err.println();
+            System.exit(-1);
+        }
 
         // client.sendFile();
 
         try {
             client.clientSocket.close();
-        } catch (IOException e) {
-            System.err.println(e.getMessage());
-            System.exit(-1);
-        }
-    }
-
-    public void sendFile() {
-        try {
-            File f = new File("clientFile");
-            f.createNewFile();
-            FileWriter myWriter = new FileWriter("clientFile");
-            myWriter.write("Fui criado com sucesso");
-            myWriter.close();
-            byte[] content = Files.readAllBytes(f.toPath());
-
-            out.writeObject(content);
-
-            in.close();
-            out.close();
         } catch (IOException e) {
             System.err.println(e.getMessage());
             System.exit(-1);
@@ -88,17 +86,42 @@ public class Tintolmarket {
         return clientSocket;
     }
 
-    public void login(String userID, String password) {
-
+    public Boolean login(String userID, String password) {
+        Boolean isUser = false;
         try {
 
             out.writeObject(userID);
             out.writeObject(password);
 
-        } catch (IOException e) {
+            isUser = (Boolean) in.readObject();
+
+        } catch (IOException | ClassNotFoundException e) {
             System.err.println(e.getMessage());
             System.exit(-1);
         }
+
+        return isUser;
     }
+
+    /*
+     * public void sendFile() {
+     * try {
+     * File f = new File("clientFile");
+     * f.createNewFile();
+     * FileWriter myWriter = new FileWriter("clientFile");
+     * myWriter.write("Fui criado com sucesso");
+     * myWriter.close();
+     * byte[] content = Files.readAllBytes(f.toPath());
+     * 
+     * out.writeObject(content);
+     * 
+     * in.close();
+     * out.close();
+     * } catch (IOException e) {
+     * System.err.println(e.getMessage());
+     * System.exit(-1);
+     * }
+     * }
+     */
 
 }
