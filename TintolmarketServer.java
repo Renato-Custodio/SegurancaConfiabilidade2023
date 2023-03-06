@@ -160,6 +160,9 @@ public class TintolmarketServer {
 				case "add":
 					// add logic
 					//String wine = (String) in.readObject(); 
+					// pensar em estrutura a aolicar para arrecadar todos os dados de casa cliente, proodutos, imagens stocks, valores e quantidades
+					// classe extra??
+					// reduzir nivel de profundidade no acesso aos dados
 					break;
 				case "s":
 				case "sell":
