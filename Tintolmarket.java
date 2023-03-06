@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.util.Scanner;
 
 public class Tintolmarket {
     private Socket clientSocket;
@@ -36,13 +37,14 @@ public class Tintolmarket {
         if (args.length == 3) {
             password = args[2];
         } else {
-            // pedir pass
+            System.out.print("Introduza a password por favor : ");
+            Scanner reader = new Scanner(System.in);
+            password = reader.nextLine();
         }
 
-        /*
-         * client.login();
-         * client.sendFile();
-         */
+        client.login(userID, password);
+
+        // client.sendFile();
 
         try {
             client.clientSocket.close();
@@ -86,14 +88,11 @@ public class Tintolmarket {
         return clientSocket;
     }
 
-    public void login() {
-
-        String username = "Renato";
-        String password = "boas";
+    public void login(String userID, String password) {
 
         try {
 
-            out.writeObject(username);
+            out.writeObject(userID);
             out.writeObject(password);
 
         } catch (IOException e) {
