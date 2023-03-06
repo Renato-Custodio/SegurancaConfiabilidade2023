@@ -7,25 +7,53 @@ import java.net.Socket;
 import java.nio.file.Files;
 
 public class Tintolmarket {
-    ObjectOutputStream out;
-    ObjectInputStream in;
-    
-    public static void main(String[] args) {
-        Tintolmarket client = new Tintolmarket();
-        Socket clientSocket = client.connectClient();
-        client.login(clientSocket);
-        client.sendFile(clientSocket);
+    private Socket clientSocket;
+    private ObjectOutputStream out;
+    private ObjectInputStream in;
 
-        try{
-            clientSocket.close();
-        }catch (IOException e) {
-			System.err.println(e.getMessage());
-			System.exit(-1);
-		}
+    public static void main(String[] args) {
+
+        if (args.length < 2) {
+            System.err.println();
+            System.err.println("Forma de uso: Tintolmarket <serverAddress> <userID> [password]");
+            System.err.println();
+            System.exit(-1);
+        }
+        String serverAddress = args[0];
+        String userID = args[1];
+        String password;
+
+        Tintolmarket client = new Tintolmarket();
+
+        // ve se existe a port
+        if (serverAddress.indexOf(":") != -1) {
+            String[] hostPort = serverAddress.split(":");
+            client.clientSocket = client.connectClient(hostPort[0], Integer.valueOf(hostPort[1]));
+        } else {
+            client.clientSocket = client.connectClient(args[0], 12345);
+        }
+
+        if (args.length == 3) {
+            password = args[2];
+        } else {
+            // pedir pass
+        }
+
+        /*
+         * client.login();
+         * client.sendFile();
+         */
+
+        try {
+            client.clientSocket.close();
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+            System.exit(-1);
+        }
     }
 
-    public void sendFile(Socket clientSocket){
-        try{
+    public void sendFile() {
+        try {
             File f = new File("clientFile");
             f.createNewFile();
             FileWriter myWriter = new FileWriter("clientFile");
@@ -37,42 +65,41 @@ public class Tintolmarket {
 
             in.close();
             out.close();
-        }catch (IOException e) {
-			System.err.println(e.getMessage());
-			System.exit(-1);
-		}
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+            System.exit(-1);
+        }
     }
 
-    public Socket connectClient(){
+    public Socket connectClient(String host, int port) {
         Socket clientSocket = null;
-        try{
-		    clientSocket = new Socket("127.0.0.1", 23456);
+        try {
+            clientSocket = new Socket(host, port);
             System.out.println("connected");
-            
-        }catch (IOException e) {
-			System.err.println(e.getMessage());
-			System.exit(-1);
-		}
+            in = new ObjectInputStream(clientSocket.getInputStream());
+            out = new ObjectOutputStream(clientSocket.getOutputStream());
+
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+            System.exit(-1);
+        }
         return clientSocket;
     }
 
-
-    public void login(Socket clientSocket){
+    public void login() {
 
         String username = "Renato";
         String password = "boas";
 
-        try{
-            out = new ObjectOutputStream(clientSocket.getOutputStream());
+        try {
+
             out.writeObject(username);
             out.writeObject(password);
 
-            in = new ObjectInputStream(clientSocket.getInputStream());
-            
-        }catch (IOException e) {
-			System.err.println(e.getMessage());
-			System.exit(-1);
-		}
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+            System.exit(-1);
+        }
     }
 
 }

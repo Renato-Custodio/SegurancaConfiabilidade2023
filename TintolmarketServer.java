@@ -21,10 +21,13 @@ public class TintolmarketServer {
 
 		System.out.println("servidor: main");
 		TintolmarketServer server = new TintolmarketServer();
-		if (args.length >= 0) {
+		// verificar intervalo portas ???
+		if (args.length > 0) {
 			server.startServer(Integer.valueOf(args[0]));
+		} else {
+			server.startServer(12345);
 		}
-		server.startServer(12345);
+
 	}
 
 	public void startServer(int port) {
