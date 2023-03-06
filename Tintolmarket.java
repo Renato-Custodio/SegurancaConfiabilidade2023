@@ -96,7 +96,7 @@ public class Tintolmarket {
 
     private void run() {
         Scanner scanner = new Scanner(System.in);
-        while (scanner.hasNextLine()) {
+        while (scanner.hasNextLine()) { // para aqui por alguma razão
             String command = scanner.nextLine();
             switch (command) {
                 case "a":

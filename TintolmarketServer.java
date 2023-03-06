@@ -122,17 +122,64 @@ public class TintolmarketServer {
 				}
 
 				boolean authentication = authenticate(outStream, user, password);
-
-				// loop with functionalities
-
 				outStream.writeObject(authentication);
+
+				receiveCommands(inStream, outStream);
+
 				outStream.close();
 				inStream.close();
-
 				socket.close();
-
 			} catch (IOException e) {
 				e.printStackTrace();
+			}
+		}
+
+		private void receiveCommands(ObjectInputStream inStream, ObjectOutputStream outStream) {
+			while (true) {
+				String command = null;
+				try {
+					command = (String) inStream.readObject();
+				} catch (ClassNotFoundException | IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				switch (command) {
+					case "a":
+					case "add":
+						// add logic
+						break;
+					case "s":
+					case "sell":
+						// add logic
+						break;
+					case "v":
+					case "view":
+						// add logic
+						break;
+					case "b":
+					case "buy":
+						// add logic
+						break;
+					case "w":
+					case "wallet":
+						// add logic
+						break;
+					case "c":
+					case "classify":
+						// add logic
+						break;
+					case "t":
+					case "talk":
+						// add logic
+						break;
+					case "r":
+					case "read":
+						// add logic
+						break;
+					default:
+
+				}
 			}
 		}
 	}
