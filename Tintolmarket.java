@@ -40,23 +40,16 @@ public class Tintolmarket {
             reader.close();
         }
 
-        if (/* client.login(userID, password) */true) {
-            System.out.println("Lista de comandos: ");
-            System.out.println("    add <wine> <image>");
-            System.out.println("    sell <wine> <value> <quantity>");
-            System.out.println("    view <wine>");
-            System.out.println("    buy <wine> <seller> <quantity>");
-            System.out.println("    wallet");
-            System.out.println("    classify <wine> <stars>");
-            System.out.println("    talk <user> <message>");
-            System.out.println("    read");
-
+        if (client.login(userID, password)) {
+            printCommands();
         } else {
             System.err.println();
             System.err.println("Erro : password invalida");
             System.err.println();
             System.exit(-1);
         }
+
+        // inputs
 
         // client.sendFile();
 
@@ -83,7 +76,7 @@ public class Tintolmarket {
         return clientSocket;
     }
 
-    public Boolean login(String userID, String password) {
+    private Boolean login(String userID, String password) {
         Boolean isUser = false;
         try {
 
@@ -98,6 +91,20 @@ public class Tintolmarket {
         }
 
         return isUser;
+    }
+
+    /* private */
+
+    private static void printCommands() {
+        System.out.println("Lista de comandos: ");
+        System.out.println("\tadd <wine> <image>");
+        System.out.println("\tsell <wine> <value> <quantity>");
+        System.out.println("\tview <wine>");
+        System.out.println("\tbuy <wine> <seller> <quantity>");
+        System.out.println("\twallet");
+        System.out.println("\tclassify <wine> <stars>");
+        System.out.println("\ttalk <user> <message>");
+        System.out.println("\tread");
     }
 
     /*

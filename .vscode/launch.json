@@ -6,6 +6,24 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Tintolmarket",
+            "request": "launch",
+            "mainClass": "Tintolmarket",
+            "projectName": "SegurancaConfiabilidade2023_Proj1_1039171b",
+            "args": [
+                "127.0.0.1",
+                "12345"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "TintolmarketServer",
+            "request": "launch",
+            "mainClass": "TintolmarketServer",
+            "projectName": "SegurancaConfiabilidade2023_Proj1_1039171b"
+        },
+        {
+            "type": "java",
             "name": "Current File",
             "request": "launch",
             "mainClass": "${file}"
@@ -16,8 +34,10 @@
             "request": "launch",
             "mainClass": "Tintolmarket",
             "projectName": "SegurancaConfiabilidade2023_Proj1_c6f68f9c",
-            "args": ["127.0.0.1","0000"]
- 
+            "args": [
+                "127.0.0.1",
+                "12345"
+            ]
         },
         {
             "type": "java",

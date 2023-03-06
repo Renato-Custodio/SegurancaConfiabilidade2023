@@ -42,7 +42,7 @@ public class TintolmarketServer {
 			boolean found = false;
 			while ((content = br.readLine()) != null) {
 				String[] userPass = content.split(":");
-				if (userPass[0].equals(user) && !userPass[1].equals(password)) {
+				if (userPass[0].equals(user)) {
 					if (!userPass[1].equals(password)) {
 						result = false;
 						break;
@@ -122,8 +122,7 @@ public class TintolmarketServer {
 				}
 
 				// authentication
-				authenticate(outStream, user, password);
-
+				outStream.writeObject(authenticate(outStream, user, password));
 				outStream.close();
 				inStream.close();
 
