@@ -1,9 +1,9 @@
 
 /***************************************************************************
-*   Seguranca e Confiabilidade 2020/21
-*
-*
-***************************************************************************/
+ *   Seguranca e Confiabilidade 2020/21
+ *
+ *
+ ***************************************************************************/
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -32,49 +32,15 @@ public class TintolmarketServer {
 
 	}
 
-	private Boolean authenticate(ObjectOutputStream outStream, String user, String password) {
-		Boolean result = true;
-		try {
-			FileReader myReader = new FileReader("clientPass.txt");
-			BufferedReader br = new BufferedReader(myReader);
-			FileWriter myWriter = new FileWriter("clientPass.txt");
-			String content;
-			boolean found = false;
-			while ((content = br.readLine()) != null) {
-				String[] userPass = content.split(":");
-				if (userPass[0].equals(user)) {
-					if (!userPass[1].equals(password)) {
-						result = false;
-						break;
-					}
-
-					found = true;
-					break;
-				}
-			}
-
-			if (!found) {
-				// <userID>:<password>
-				myWriter.write(user + ":" + password);
-			}
-
-			br.close();
-			myReader.close();
-			myWriter.close();
-		} catch (IOException e) {
-			System.err.println(e.getMessage());
-			System.exit(-1);
-		}
-
-		return result;
-	}
-
 	public void startServer(int port) {
+
 		ServerSocket sSoc = null;
 		File f = new File("clientPass.txt");
 		try {
 			f.createNewFile();
 			sSoc = new ServerSocket(port);
+			System.out.println("Servidor a correr...");
+
 		} catch (IOException e) {
 			System.err.println(e.getMessage());
 			System.exit(-1);
@@ -104,6 +70,7 @@ public class TintolmarketServer {
 		}
 
 		public void run() {
+			
 			try {
 				ObjectOutputStream outStream = new ObjectOutputStream(socket.getOutputStream());
 				ObjectInputStream inStream = new ObjectInputStream(socket.getInputStream());
@@ -134,8 +101,52 @@ public class TintolmarketServer {
 			}
 		}
 
+
+		private Boolean authenticate(ObjectOutputStream outStream, String user, String password) {
+			Boolean result = true;
+			try {
+				FileReader myReader = new FileReader("clientPass.txt");
+				BufferedReader br = new BufferedReader(myReader);
+				FileWriter myWriter = new FileWriter("clientPass.txt");
+				String content;
+				boolean found = false;
+				while ((content = br.readLine()) != null) {
+					String[] userPass = content.split(":");
+					if (userPass[0].equals(user)) {
+						if (!userPass[1].equals(password)) {
+							result = false;
+							break;
+						}
+
+						found = true;
+						break;
+					}
+				}
+
+				if (!found) {
+					// <userID>:<password>
+					myWriter.write(user + ":" + password);
+				}
+
+				br.close();
+				myReader.close();
+				myWriter.close();
+			} catch (IOException e) {
+				System.err.println(e.getMessage());
+				System.exit(-1);
+			}
+
+			return result;
+		}
+
+
+
+
+
 		private void receiveCommands(ObjectInputStream inStream, ObjectOutputStream outStream) {
+			
 			while (true) {
+				
 				String command = null;
 				try {
 					command = (String) inStream.readObject();
@@ -145,39 +156,40 @@ public class TintolmarketServer {
 				}
 
 				switch (command) {
-					case "a":
-					case "add":
-						// add logic
-						break;
-					case "s":
-					case "sell":
-						// add logic
-						break;
-					case "v":
-					case "view":
-						// add logic
-						break;
-					case "b":
-					case "buy":
-						// add logic
-						break;
-					case "w":
-					case "wallet":
-						// add logic
-						break;
-					case "c":
-					case "classify":
-						// add logic
-						break;
-					case "t":
-					case "talk":
-						// add logic
-						break;
-					case "r":
-					case "read":
-						// add logic
-						break;
-					default:
+				case "a":
+				case "add":
+					// add logic
+					//String wine = (String) in.readObject(); 
+					break;
+				case "s":
+				case "sell":
+					// add logic
+					break;
+				case "v":
+				case "view":
+					// add logic
+					break;
+				case "b":
+				case "buy":
+					// add logic
+					break;
+				case "w":
+				case "wallet":
+					// add logic
+					break;
+				case "c":
+				case "classify":
+					// add logic
+					break;
+				case "t":
+				case "talk":
+					// add logic
+					break;
+				case "r":
+				case "read":
+					// add logic
+					break;
+				default:
 
 				}
 			}
