@@ -16,7 +16,7 @@
             "request": "launch",
             "mainClass": "Tintolmarket",
             "projectName": "SegurancaConfiabilidade2023_Proj1_c6f68f9c",
-            "args": ["127.0.0.1","boas"]
+            "args": ["127.0.0.1","0000"]
  
         },
         {

@@ -1,10 +1,7 @@
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.nio.file.Files;
 import java.util.Scanner;
 
 public class Tintolmarket {
@@ -20,7 +17,7 @@ public class Tintolmarket {
             System.err.println();
             System.exit(-1);
         }
-        String serverAddress = args[0];
+        String serverAddress = args[0]; // TODO
         String userID = args[1];
         String password;
 
@@ -43,16 +40,16 @@ public class Tintolmarket {
             reader.close();
         }
 
-        if (client.login(userID, password)) {
+        if (/* client.login(userID, password) */true) {
             System.out.println("Lista de comandos: ");
-            System.out.println("add <wine> <image>");
-            System.out.println("sell <wine> <value> <quantity>");
-            System.out.println("view <wine>");
-            System.out.println("buy <wine> <seller> <quantity>");
-            System.out.println("wallet");
-            System.out.println("classify <wine> <stars>");
-            System.out.println("talk <user> <message>");
-            System.out.println("read");
+            System.out.println("    add <wine> <image>");
+            System.out.println("    sell <wine> <value> <quantity>");
+            System.out.println("    view <wine>");
+            System.out.println("    buy <wine> <seller> <quantity>");
+            System.out.println("    wallet");
+            System.out.println("    classify <wine> <stars>");
+            System.out.println("    talk <user> <message>");
+            System.out.println("    read");
 
         } else {
             System.err.println();
