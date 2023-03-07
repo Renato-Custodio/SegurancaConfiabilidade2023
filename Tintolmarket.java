@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Scanner;
 
@@ -97,44 +98,79 @@ public class Tintolmarket {
     private void run() {
         Scanner scanner = new Scanner(System.in);
         while (scanner.hasNextLine()) { // para aqui por alguma razão
-            String command = scanner.nextLine();
-            switch (command) {
-                case "a":
-                case "add":
-                    // add logic
-                    break;
-                case "s":
-                case "sell":
-                    // add logic
-                    break;
-                case "v":
-                case "view":
-                    // add logic
-                    break;
-                case "b":
-                case "buy":
-                    // add logic
-                    break;
-                case "w":
-                case "wallet":
-                    // add logic
-                    break;
-                case "c":
-                case "classify":
-                    // add logic
-                    break;
-                case "t":
-                case "talk":
-                    // add logic
-                    break;
-                case "r":
-                case "read":
-                    // add logic
-                    break;
-                default:
-                    // Exit Code
-                    scanner.close();
-                    return;
+            String[] command = scanner.nextLine().split(" +");
+            try {
+                switch (command[0]) {
+                    case "a":
+                    case "add":
+                        out.writeObject(command[0]);
+                        out.writeObject(command[1]);
+                        // sendFile()
+                        // add logic
+                        break;
+                    case "s":
+                    case "sell":
+                        if (isNumeric(command[2]) && isNumeric(command[3])) {
+                            out.writeObject(command[0]);
+                            out.writeObject(command[1]);
+                            out.writeObject(Integer.parseInt(command[2]));
+                            out.writeObject(Double.parseDouble(null));
+                        }
+                        System.out.println("Invalid Arguments.");
+                        // add logic
+                        break;
+                    case "v":
+                    case "view":
+                        out.writeObject(command[0]);
+                        out.writeObject(command[1]);
+                        // add logic
+                        break;
+                    case "b":
+                    case "buy":
+                        if (isNumeric(command[3])) {
+                            out.writeObject(command[0]);
+                            out.writeObject(command[1]);
+                            out.writeObject(command[2]);
+                            out.writeObject(Integer.parseInt(command[3]));
+                        }
+                        System.out.println("Invalid Arguments.");
+                        // add logic
+
+                        break;
+                    case "w":
+                    case "wallet":
+                        out.writeObject(command[0]);
+                        // add logic
+                        break;
+                    case "c":
+                    case "classify":
+                        if (isNumeric(command[2])) {
+                            out.writeObject(command[0]);
+                            out.writeObject(command[1]);
+                            out.writeObject(Integer.parseInt(command[2]));
+                        }
+                        // add logic
+                        break;
+                    case "t":
+                    case "talk":
+                        out.writeObject(command[0]);
+                        out.writeObject(command[1]);
+                        out.writeObject(command[2]);
+                        // add logic
+                        break;
+                    case "r":
+                    case "read":
+                        out.writeObject(command[0]);
+                        // add logic
+                        break;
+                    default:
+                        // Exit Code
+                        scanner.close();
+                        return;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.exit(-1);
             }
             printCommands();
         }
@@ -150,6 +186,19 @@ public class Tintolmarket {
         System.out.println("\tclassify <wine> <stars>");
         System.out.println("\ttalk <user> <message>");
         System.out.println("\tread");
+    }
+
+    private boolean isNumeric(String str) {
+        if (str == null) {
+            return false;
+        }
+        try {
+            double num = Double.parseDouble(str);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+
+        return true;
     }
 
     /*

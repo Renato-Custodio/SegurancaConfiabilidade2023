@@ -18,7 +18,6 @@ import java.net.Socket;
 //Servidor myServer
 
 public class TintolmarketServer {
-
 	public static void main(String[] args) {
 
 		System.out.println("servidor: main");
@@ -70,7 +69,7 @@ public class TintolmarketServer {
 		}
 
 		public void run() {
-			
+
 			try {
 				ObjectOutputStream outStream = new ObjectOutputStream(socket.getOutputStream());
 				ObjectInputStream inStream = new ObjectInputStream(socket.getInputStream());
@@ -100,7 +99,6 @@ public class TintolmarketServer {
 				e.printStackTrace();
 			}
 		}
-
 
 		private Boolean authenticate(ObjectOutputStream outStream, String user, String password) {
 			Boolean result = true;
@@ -139,14 +137,10 @@ public class TintolmarketServer {
 			return result;
 		}
 
-
-
-
-
 		private void receiveCommands(ObjectInputStream inStream, ObjectOutputStream outStream) {
-			
+
 			while (true) {
-				
+
 				String command = null;
 				try {
 					command = (String) inStream.readObject();
@@ -154,48 +148,77 @@ public class TintolmarketServer {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-
-				switch (command) {
-				case "a":
-				case "add":
-					// add logic
-					//String wine = (String) in.readObject(); 
-					// pensar em estrutura a aolicar para arrecadar todos os dados de casa cliente, proodutos, imagens stocks, valores e quantidades
-					// classe extra??
-					// reduzir nivel de profundidade no acesso aos dados
-					break;
-				case "s":
-				case "sell":
-					// add logic
-					break;
-				case "v":
-				case "view":
-					// add logic
-					break;
-				case "b":
-				case "buy":
-					// add logic
-					break;
-				case "w":
-				case "wallet":
-					// add logic
-					break;
-				case "c":
-				case "classify":
-					// add logic
-					break;
-				case "t":
-				case "talk":
-					// add logic
-					break;
-				case "r":
-				case "read":
-					// add logic
-					break;
-				default:
-
+				String wine = null;
+				String user = null;
+				Double value = null;
+				Integer quantity = null;
+				Integer stars = null;
+				String message = null;
+				try {
+					switch (command) {
+						case "a":
+						case "add":
+							wine = (String) inStream.readObject();
+							// receiveFile()
+							// add logic
+							break;
+						case "s":
+						case "sell":
+							wine = (String) inStream.readObject();
+							value = (Double) inStream.readObject();
+							quantity = (int) inStream.readObject();
+							// add logic
+							break;
+						case "v":
+						case "view":
+							wine = (String) inStream.readObject();
+							// add logic
+							break;
+						case "b":
+						case "buy":
+							wine = (String) inStream.readObject();
+							user = (String) inStream.readObject();
+							quantity = (Integer) inStream.readObject();
+							// add logic
+							break;
+						case "w":
+						case "wallet":
+							// add logic
+							break;
+						case "c":
+						case "classify":
+							wine = (String) inStream.readObject();
+							stars = (Integer) inStream.readObject();
+							// add logic
+							break;
+						case "t":
+						case "talk":
+							user = (String) inStream.readObject();
+							message = (String) inStream.readObject();
+							// add logic
+							break;
+						case "r":
+						case "read":
+							// add logic
+							break;
+					}
+				} catch (IOException | ClassNotFoundException e) {
+					e.printStackTrace(); // TODO different exception handler
 				}
 			}
+		}
+
+		private boolean isNumeric(String str) {
+			if (str == null) {
+				return false;
+			}
+			try {
+				double num = Double.parseDouble(str);
+			} catch (NumberFormatException e) {
+				return false;
+			}
+
+			return true;
 		}
 	}
 }
