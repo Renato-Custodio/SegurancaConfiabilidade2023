@@ -1,7 +1,6 @@
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Scanner;
 
@@ -24,7 +23,6 @@ public class Tintolmarket {
 
         Tintolmarket client = new Tintolmarket();
 
-        // ve se existe a port
         if (serverAddress.indexOf(":") != -1) {
             String[] hostPort = serverAddress.split(":");
             client.clientSocket = client.connectClient(hostPort[0], Integer.valueOf(hostPort[1]));
@@ -51,8 +49,6 @@ public class Tintolmarket {
         }
 
         client.run();
-
-        // client.sendFile();
 
         try {
             client.clientSocket.close();

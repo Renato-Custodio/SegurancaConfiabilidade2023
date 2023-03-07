@@ -3,8 +3,9 @@ package server_side;
 import java.util.ArrayList;
 
 public class User {
-    private String userID;
-    private ArrayList<Wine> wines = new ArrayList<>();
+    private final String userID;
+    private final ArrayList<Wine> wines = new ArrayList<>();
+    private double amount;
 
     public User(String user) {
         this.userID = user;
@@ -25,5 +26,9 @@ public class User {
 
     public ArrayList<Wine> getWines() {
         return this.wines;
+    }
+
+    public double getBalance() {
+        return this.amount;
     }
 }
