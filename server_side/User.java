@@ -9,11 +9,13 @@ public class User {
 
     public User(String user) {
         this.userID = user;
+        this.amount = 200;
     }
 
     public User(String user, String wine) {
         this.userID = user;
         wines.add(new Wine(wine));
+        this.amount = 200;
     }
 
     public String getUser() {

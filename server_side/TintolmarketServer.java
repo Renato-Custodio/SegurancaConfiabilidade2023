@@ -106,25 +106,23 @@ public class TintolmarketServer {
 			try {
 				FileReader myReader = new FileReader("clientPass.txt");
 				BufferedReader br = new BufferedReader(myReader);
-				FileWriter myWriter = new FileWriter("clientPass.txt");
+				FileWriter myWriter = new FileWriter("clientPass.txt", true);
 				String content;
 				boolean found = false;
 				while ((content = br.readLine()) != null) {
 					String[] userPass = content.split(":");
 					if (userPass[0].equals(user)) {
+						found = true;
 						if (!userPass[1].equals(password)) {
 							result = false;
 							break;
 						}
-
-						found = true;
-						break;
 					}
 				}
 
 				if (!found) {
 					// <userID>:<password>
-					myWriter.write(user + ":" + password);
+					myWriter.write(user + ":" + password + "\n");
 				}
 
 				br.close();
@@ -139,9 +137,7 @@ public class TintolmarketServer {
 		}
 
 		private void receiveCommands(ObjectInputStream inStream, ObjectOutputStream outStream) {
-
 			while (true) {
-
 				String command = null;
 				try {
 					command = (String) inStream.readObject();
@@ -203,6 +199,8 @@ public class TintolmarketServer {
 						case "read":
 							// add logic
 							break;
+						default:
+							return;
 					}
 				} catch (IOException | ClassNotFoundException e) {
 					e.printStackTrace(); // TODO different exception handler
