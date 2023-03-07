@@ -18,7 +18,7 @@ public class User {
         this.amount = 200;
     }
 
-    public String getUser() {
+    public String getName() {
         return this.userID;
     }
 

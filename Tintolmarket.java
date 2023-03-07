@@ -93,15 +93,20 @@ public class Tintolmarket {
 
     private void run() {
         Scanner scanner = new Scanner(System.in);
-        while (scanner.hasNextLine()) { // para aqui por alguma razão
-            String[] command = scanner.nextLine().split(" +");
+        while (true) {
+            System.out.print("Comando: ");
+            String[] command = scanner.nextLine().split(" "); // tirei o +
             try {
                 switch (command[0]) {
                     case "a":
                     case "add":
                         out.writeObject(command[0]);
                         out.writeObject(command[1]);
-                        // sendFile()
+                        // sus
+                        out.writeObject(command[2]);
+
+                        System.out.println(in.readObject());
+
                         // add logic
                         break;
                     case "s":
@@ -167,6 +172,9 @@ public class Tintolmarket {
             } catch (IOException e) {
                 e.printStackTrace();
                 System.exit(-1);
+            } catch (ClassNotFoundException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
             printCommands();
         }

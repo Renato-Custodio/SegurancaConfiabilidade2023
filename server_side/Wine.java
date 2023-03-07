@@ -5,6 +5,7 @@ public class Wine {
     private int quantity;
     private boolean sell;
     private double value;
+    private int stars;
 
     public Wine(String wine) {
         this.id = wine;
@@ -36,5 +37,28 @@ public class Wine {
 
     public double getValue() {
         return this.value;
+    }
+
+    public void setClassification(int stars) {
+        this.stars = stars;
+    }
+
+    public int getClassification() {
+        return this.stars;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof Wine)) {
+            return false;
+        }
+
+        Wine wine = (Wine) o;
+
+        return this.id.equals(wine.getId());
     }
 }

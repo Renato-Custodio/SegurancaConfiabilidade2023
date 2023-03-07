@@ -1,11 +1,8 @@
 package server_side;
 
-/***************************************************************************
- *   Seguranca e Confiabilidade 2022/23
- *
- *
- ***************************************************************************/
-
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -15,15 +12,20 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+import javax.imageio.ImageIO;
 
 //Servidor myServer
 
 public class TintolmarketServer {
+	List<User> userList = new ArrayList<>();
+
 	public static void main(String[] args) {
 
 		System.out.println("servidor: main");
 		TintolmarketServer server = new TintolmarketServer();
-		// verificar intervalo portas ???
+
 		if (args.length > 0) {
 			server.startServer(Integer.valueOf(args[0]));
 		} else {
@@ -38,6 +40,20 @@ public class TintolmarketServer {
 		File f = new File("clientPass.txt");
 		try {
 			f.createNewFile();
+			// ficheiro para guardar informacao
+			/*
+			 * File file = new File("clientData.txt");
+			 * if (file.createNewFile()) {
+			 * // clientName/outras cenas
+			 * FileReader fileReader = new FileReader(file);
+			 * Scanner reader = new Scanner(fileReader);
+			 * // adiconar à lista de clientes
+			 * while (reader.hasNextLine()) {
+			 * reader.nextLine();
+			 * }
+			 * 
+			 * }
+			 */
 			sSoc = new ServerSocket(port);
 			System.out.println("Servidor a correr...");
 
@@ -63,6 +79,7 @@ public class TintolmarketServer {
 	class ServerThread extends Thread {
 
 		private Socket socket = null;
+		private User currentUser;
 
 		ServerThread(Socket inSoc) {
 			socket = inSoc;
@@ -107,6 +124,7 @@ public class TintolmarketServer {
 				FileReader myReader = new FileReader("clientPass.txt");
 				BufferedReader br = new BufferedReader(myReader);
 				FileWriter myWriter = new FileWriter("clientPass.txt", true);
+
 				String content;
 				boolean found = false;
 				while ((content = br.readLine()) != null) {
@@ -117,12 +135,25 @@ public class TintolmarketServer {
 							result = false;
 							break;
 						}
+						// ver na lista
+						for (User us : userList) {
+							if (us.getName().equals(user)) {
+								currentUser = us;
+								break;
+							}
+						}
 					}
 				}
 
 				if (!found) {
 					// <userID>:<password>
 					myWriter.write(user + ":" + password + "\n");
+					/*
+					 * myWriter = new FileWriter("clientData.txt");
+					 * myWriter.write("");
+					 */
+					currentUser = new User(user);
+					userList.add(currentUser);
 				}
 
 				br.close();
@@ -145,6 +176,7 @@ public class TintolmarketServer {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				String image = null;
 				String wine = null;
 				String user = null;
 				Double value = null;
@@ -156,9 +188,23 @@ public class TintolmarketServer {
 						case "a":
 						case "add":
 							wine = (String) inStream.readObject();
-							// receiveFile()
+							image = (String) inStream.readObject();
+							// verificar se ja existe
+							boolean found = false;
+							for (User us : userList) {
+								if (us.getWines().contains(new Wine(wine))) { // possivelmente override equals Wine
+																				// class
+									outStream.writeObject("Vinho Já Existe.");
+									found = true;
+									break;
+								}
+							}
+							// returnar exception
+							if (!found) {
+								outStream.writeObject(add(wine, image));
+								currentUser.addWine(wine);
+							}
 
-							// add logic
 							break;
 						case "s":
 						case "sell":
@@ -206,6 +252,24 @@ public class TintolmarketServer {
 					e.printStackTrace(); // TODO different exception handler
 				}
 			}
+		}
+
+		private String add(String wine, String image) throws IOException {
+			int width = 1000;
+			int height = 1000;
+
+			BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+			String pathUser = "server_side/imagens/";
+
+			File foto = new File(pathUser, "0" + wine + "-" + image + ".jpg"); // 0 necessário?
+			Graphics2D g2d = bufferedImage.createGraphics();
+			g2d.setColor(Color.blue);
+			g2d.fillOval(10, 10, width, height);
+			ImageIO.write(bufferedImage, "jpeg", foto);
+
+			foto.createNewFile();
+
+			return "O vinho : " + wine + " foi adicionado";
 		}
 
 		private boolean isNumeric(String str) {
