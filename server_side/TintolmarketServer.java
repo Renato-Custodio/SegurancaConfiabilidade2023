@@ -1,3 +1,4 @@
+package server_side;
 
 /***************************************************************************
  *   Seguranca e Confiabilidade 2020/21
@@ -160,6 +161,7 @@ public class TintolmarketServer {
 						case "add":
 							wine = (String) inStream.readObject();
 							// receiveFile()
+
 							// add logic
 							break;
 						case "s":
