@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 public class Wine {
     private final String id;
-
     private ArrayList<Integer> stars;
 
     public Wine(String wine) {
@@ -41,30 +40,5 @@ public class Wine {
         Wine wine = (Wine) o;
 
         return this.id.equals(wine.getId());
-    }
-
-    public class WineSell {
-        private Wine wine;
-        private int quantity;
-        private double value;
-
-        public WineSell(Wine wine, int quantity, double value) {
-            this.quantity = quantity;
-            this.value = value;
-            this.wine = wine;
-        }
-
-        public Wine getWineType() {
-            return this.wine;
-        }
-
-        public int getQuantity() {
-            return quantity;
-        }
-
-        public double getValue() {
-            return this.value;
-        }
-
     }
 }
