@@ -189,11 +189,12 @@ public class TintolmarketServer {
 						case "add":
 							wine = (String) inStream.readObject();
 							image = (String) inStream.readObject();
+							// TODO receive image
+
 							// verificar se ja existe
 							boolean found = false;
 							for (User us : userList) {
-								if (us.getWines().contains(new Wine(wine))) { // possivelmente override equals Wine
-																				// class
+								if (us.getWines().contains(new Wine(wine))) {
 									outStream.writeObject("Vinho Já Existe.");
 									found = true;
 									break;
@@ -204,14 +205,25 @@ public class TintolmarketServer {
 								outStream.writeObject(add(wine, image));
 								currentUser.addWine(wine);
 							}
-
+							outStream.writeObject("Vinho adicionado com sucesso.");
 							break;
 						case "s":
 						case "sell":
 							wine = (String) inStream.readObject();
 							value = (Double) inStream.readObject();
 							quantity = (int) inStream.readObject();
-							// add logic
+
+							if (!currentUser.getWines().contains(new Wine(wine))) {
+								outStream.writeObject("Este utilizador não possui este vinho.");
+								break;
+							}
+
+							Wine userWine = currentUser.getWine(wine);
+							userWine.setValue(value);
+							userWine.setQuantity(quantity);
+							userWine.setSell(true);
+
+							outStream.writeObject("Confirmação de ação de venda.");
 							break;
 						case "v":
 						case "view":

@@ -30,6 +30,21 @@ public class User {
         return this.wines;
     }
 
+    /**
+     * @param wineID
+     * @requires this User to have a Wine with Wine.getID().equals(wineID)
+     * @return
+     */
+    public Wine getWine(String wineID) {
+        for (Wine vinho : this.wines) {
+            if (vinho.getId().equals(wineID)) {
+                return vinho;
+            }
+        }
+
+        return null;
+    }
+
     public double getBalance() {
         return this.amount;
     }
