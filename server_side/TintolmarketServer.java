@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -20,6 +21,7 @@ import javax.imageio.ImageIO;
 
 public class TintolmarketServer {
 	List<User> userList = new ArrayList<>();
+	List<Wine> wineList = new ArrayList<>();
 
 	public static void main(String[] args) {
 
@@ -177,7 +179,8 @@ public class TintolmarketServer {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				String image = null;
+
+				byte[] image = null;
 				String wine = null;
 				String user = null;
 				Double value = null;
@@ -189,8 +192,7 @@ public class TintolmarketServer {
 						case "a":
 						case "add":
 							wine = (String) inStream.readObject();
-							image = (String) inStream.readObject();
-							// TODO receive image
+							image = (byte[]) inStream.readObject();
 
 							// verificar se ja existe
 							boolean found = false;
@@ -202,10 +204,9 @@ public class TintolmarketServer {
 								}
 							}
 
-							// returnar exception
+							// talvez seja só currentUser.getWines().contains(new Wine(wine)) ?
 
 							if (!found) {
-								// o add image ainda n foi testado
 								add(wine, image);
 								outStream.writeObject("Vinho adicionado com sucesso.");
 							}
@@ -226,11 +227,21 @@ public class TintolmarketServer {
 							userWine.setQuantity(quantity);
 							userWine.setSell(true);
 
-							outStream.writeObject("Confirmação de ação de venda.");
+							outStream.writeObject(
+									quantity + " unidades de vinho " + wine + " posto à venda a " + value + ".");
 							break;
 						case "v":
 						case "view":
 							wine = (String) inStream.readObject();
+							StringBuilder sb = new StringBuilder("Informações para o vinho " + wine + ":\n");
+							for (User us : userList) {
+								if (us.getWines().contains(new Wine(wine))) {
+									sb.append("\t" + us.getName() + ":\n");
+									Wine tempWine = us.getWine(wine);
+									sb.append("\t\tclassificação media: " + tempWine.getClassificationAvarage() + "\n");
+									sb.append("\t\tclassificação media: " + tempWine.getClassificationAvarage() + "\n");
+								}
+							}
 							// add logic
 							break;
 						case "b":
@@ -269,27 +280,21 @@ public class TintolmarketServer {
 			}
 		}
 
-		private String add(String wine, String image) throws IOException {
+		private void add(String wine, byte[] image) throws IOException {
 
 			int width = 1000;
 			int height = 1000;
 
-			BufferedImage bufferedImage = new BufferedImage(width, height,
-					BufferedImage.TYPE_INT_RGB);
+			BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(image));
 			String pathUser = "server_side/imagens/";
 
 			File foto = new File(pathUser, wine + ".jpg");
-			// necessário?
-			Graphics2D g2d = bufferedImage.createGraphics();
-			g2d.setColor(Color.blue);
-			g2d.fillOval(10, 10, width, height);
-			ImageIO.write(bufferedImage, "jpeg", foto);
+			ImageIO.write(bufferedImage, "jpg", foto);
 
 			foto.createNewFile();
 
-			currentUser.addWine(wine);
+			wineList.add(new Wine(wine));
 
-			return "O vinho : " + wine + " foi adicionado";
 		}
 
 		private boolean isNumeric(String str) {

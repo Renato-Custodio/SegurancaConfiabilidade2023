@@ -117,16 +117,19 @@ public class Tintolmarket {
                         if (isNumeric(command[2]) && isNumeric(command[3])) {
                             out.writeObject(command[0]);
                             out.writeObject(command[1]);
-                            out.writeObject(Integer.parseInt(command[2]));
-                            out.writeObject(Double.parseDouble(null));
+                            out.writeObject(Double.parseDouble(command[2]));
+                            out.writeObject(Integer.parseInt(command[3]));
+                            System.out.println(in.readObject());
+                            break;
                         }
                         System.out.println("Invalid Arguments.");
-                        // add logic
                         break;
                     case "v":
                     case "view":
                         out.writeObject(command[0]);
                         out.writeObject(command[1]);
+
+                        in.readObject();
                         // add logic
                         break;
                     case "b":
