@@ -107,9 +107,10 @@ public class TintolmarketServer {
 
 				boolean authentication = authenticate(outStream, user, password);
 				outStream.writeObject(authentication);
-
-				receiveCommands(inStream, outStream);
-
+				if (authentication) {
+					currentUser = new User(user);
+					receiveCommands(inStream, outStream);
+				}
 				outStream.close();
 				inStream.close();
 				socket.close();
@@ -200,12 +201,14 @@ public class TintolmarketServer {
 									break;
 								}
 							}
+
 							// returnar exception
+
 							if (!found) {
-								outStream.writeObject(add(wine, image));
-								currentUser.addWine(wine);
+								// o add image ainda n foi testado
+								add(wine, image);
+								outStream.writeObject("Vinho adicionado com sucesso.");
 							}
-							outStream.writeObject("Vinho adicionado com sucesso.");
 							break;
 						case "s":
 						case "sell":
@@ -267,19 +270,24 @@ public class TintolmarketServer {
 		}
 
 		private String add(String wine, String image) throws IOException {
+
 			int width = 1000;
 			int height = 1000;
 
-			BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+			BufferedImage bufferedImage = new BufferedImage(width, height,
+					BufferedImage.TYPE_INT_RGB);
 			String pathUser = "server_side/imagens/";
 
-			File foto = new File(pathUser, "0" + wine + "-" + image + ".jpg"); // 0 necessário?
+			File foto = new File(pathUser, wine + ".jpg");
+			// necessário?
 			Graphics2D g2d = bufferedImage.createGraphics();
 			g2d.setColor(Color.blue);
 			g2d.fillOval(10, 10, width, height);
 			ImageIO.write(bufferedImage, "jpeg", foto);
 
 			foto.createNewFile();
+
+			currentUser.addWine(wine);
 
 			return "O vinho : " + wine + " foi adicionado";
 		}

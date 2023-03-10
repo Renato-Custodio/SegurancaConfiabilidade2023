@@ -1,7 +1,9 @@
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.nio.file.Files;
 import java.util.Scanner;
 
 public class Tintolmarket {
@@ -42,6 +44,7 @@ public class Tintolmarket {
         if (client.login(userID, password)) {
             printCommands();
         } else {
+            /// se que voltar a pedir a pass
             System.err.println();
             System.err.println("Erro : password invalida");
             System.err.println();
@@ -95,19 +98,19 @@ public class Tintolmarket {
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print("Comando: ");
-            String[] command = scanner.nextLine().split(" "); // tirei o +
+            String[] command = scanner.nextLine().split(" ");
             try {
                 switch (command[0]) {
                     case "a":
                     case "add":
                         out.writeObject(command[0]);
                         out.writeObject(command[1]);
-                        // sus
-                        out.writeObject(command[2]);
+                        File f = new File(command[2]);
+                        byte[] content = Files.readAllBytes(f.toPath());
+
+                        out.writeObject(content);
 
                         System.out.println(in.readObject());
-
-                        // add logic
                         break;
                     case "s":
                     case "sell":

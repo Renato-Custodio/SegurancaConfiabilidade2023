@@ -4,15 +4,17 @@ import java.util.ArrayList;
 
 public class User {
     private final String userID;
-    private final ArrayList<Wine> wines = new ArrayList<>();
+    private final ArrayList<Wine> wines;
     private double amount;
 
     public User(String user) {
+        this.wines = new ArrayList<>();
         this.userID = user;
         this.amount = 200;
     }
 
     public User(String user, String wine) {
+        this.wines = new ArrayList<>();
         this.userID = user;
         wines.add(new Wine(wine));
         this.amount = 200;
