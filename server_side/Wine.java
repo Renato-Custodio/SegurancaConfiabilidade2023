@@ -43,14 +43,19 @@ public class Wine {
         return this.id.equals(wine.getId());
     }
 
-    public class WineSell extends Wine {
+    public class WineSell {
+        private Wine wine;
         private int quantity;
         private double value;
 
-        public WineSell(String wine, int quantity, double value) {
-            super(wine);
+        public WineSell(Wine wine, int quantity, double value) {
             this.quantity = quantity;
             this.value = value;
+            this.wine = wine;
+        }
+
+        public Wine getWineType() {
+            return this.wine;
         }
 
         public int getQuantity() {
