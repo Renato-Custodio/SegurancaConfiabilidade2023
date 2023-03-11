@@ -192,7 +192,6 @@ public class Tintolmarket {
                 e.printStackTrace();
                 System.exit(-1);
             } catch (ClassNotFoundException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
             printCommands();
@@ -216,33 +215,12 @@ public class Tintolmarket {
             return false;
         }
         try {
-            double num = Double.parseDouble(str);
+            Double.parseDouble(str);
         } catch (NumberFormatException e) {
             return false;
         }
 
         return true;
     }
-
-    /*
-     * public void sendFile() {
-     * try {
-     * File f = new File("clientFile");
-     * f.createNewFile();
-     * FileWriter myWriter = new FileWriter("clientFile");
-     * myWriter.write("Fui criado com sucesso");
-     * myWriter.close();
-     * byte[] content = Files.readAllBytes(f.toPath());
-     * 
-     * out.writeObject(content);
-     * 
-     * in.close();
-     * out.close();
-     * } catch (IOException e) {
-     * System.err.println(e.getMessage());
-     * System.exit(-1);
-     * }
-     * }
-     */
 
 }
