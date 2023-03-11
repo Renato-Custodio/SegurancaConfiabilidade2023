@@ -1,7 +1,7 @@
 .json
 .xml
 .txt
-.vscode
+.vscode/*
 .idea
 .class
 /server_side/wineImages/*

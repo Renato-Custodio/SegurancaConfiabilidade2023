@@ -109,7 +109,6 @@ public class TintolmarketServer {
 				boolean authentication = authenticate(outStream, user, password);
 				outStream.writeObject(authentication);
 				if (authentication) {
-					currentUser = new User(user);
 					receiveCommands(inStream, outStream);
 				}
 				outStream.close();
@@ -220,8 +219,7 @@ public class TintolmarketServer {
 							currentUser.sellWine(new WineSell(wine, quantity, value));
 
 							outStream.writeObject(
-									quantity + " unidades de vinho " + wineName + " posto à venda a " + value
-											+ ".");
+									quantity + " unidades de vinho " + wineName + " posto à venda a " + value + ".");
 							break;
 						case "v":
 						case "view":
@@ -245,9 +243,9 @@ public class TintolmarketServer {
 									if (tempWineSell != null) {
 										sb.append("\tvendedores:\n");
 										sb.append(
-												"\t\tNome: " + tempUser.getName() + " Preço: "
+												"\t\tNome: " + tempUser.getName() + ", Preço: "
 														+ tempWineSell.getValue()
-														+ " Quantidade: " + tempWineSell.getQuantity() + "\n");
+														+ ", Quantidade: " + tempWineSell.getQuantity() + ".\n");
 									}
 								}
 								outStream.writeObject(sb.toString());
@@ -286,8 +284,6 @@ public class TintolmarketServer {
 						default:
 							return;
 					}
-					// ver se da de outra maneira
-					userList.set(userList.indexOf(currentUser), currentUser);
 				} catch (IOException | ClassNotFoundException e) {
 					e.printStackTrace(); // TODO different exception handler
 				}
@@ -305,19 +301,6 @@ public class TintolmarketServer {
 			foto.createNewFile();
 
 			wineList.add(new Wine(wine));
-		}
-
-		private boolean isNumeric(String str) {
-			if (str == null) {
-				return false;
-			}
-			try {
-				double num = Double.parseDouble(str);
-			} catch (NumberFormatException e) {
-				return false;
-			}
-
-			return true;
 		}
 	}
 }
