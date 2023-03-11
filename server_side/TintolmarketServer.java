@@ -11,6 +11,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import javax.imageio.ImageIO;
@@ -228,15 +229,19 @@ public class TintolmarketServer {
 							StringBuilder sb = new StringBuilder("Informações para o vinho " + wineName + ":\n");
 
 							if (wineList.contains(new Wine(wineName))) {
-								// talvez haja uma forma melhor de fazer
 
 								// dar print da imagem
+
+								File f = new File("server_side/wineImages/" + wineName + ".jpg");
+								byte[] content = Files.readAllBytes(f.toPath());
+								outStream.writeObject(content);
+
+								// informacoes
 								sb.append("\tclassificação media: "
 										+ wineList.get(wineList.indexOf(new Wine(wineName))).getClassificationAvarage()
 										+ "\n");
 								for (User tempUser : userList) {
 									WineSell tempWineSell = tempUser.getWine(wineName);
-									System.out.println(tempUser.getName() + " " + tempUser.getWines());
 									if (tempWineSell != null) {
 										sb.append("\tvendedores:\n");
 										sb.append(

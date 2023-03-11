@@ -1,3 +1,5 @@
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -5,6 +7,8 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.util.Scanner;
+
+import javax.imageio.ImageIO;
 
 public class Tintolmarket {
     private Socket clientSocket;
@@ -128,6 +132,11 @@ public class Tintolmarket {
                     case "view":
                         out.writeObject(command[0]);
                         out.writeObject(command[1]);
+                        // criar ficheiro com imagem
+                        // dar print
+                        // dps apagar
+                        BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream((byte[]) in.readObject()));
+                        
 
                         System.out.println(in.readObject());
                         break;

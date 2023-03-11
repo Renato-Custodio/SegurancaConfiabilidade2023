@@ -41,7 +41,6 @@ public class User {
      */
     public WineSell getWine(String wineID) {
         for (WineSell vinho : this.wines) {
-            System.out.println(vinho.getWine());
             if (vinho.getWine().equals(new Wine(wineID))) {
                 return vinho;
             }
