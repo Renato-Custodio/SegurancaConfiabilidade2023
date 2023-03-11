@@ -1,4 +1,5 @@
 package client_side;
+
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -133,11 +134,14 @@ public class Tintolmarket {
                     case "view":
                         out.writeObject(command[0]);
                         out.writeObject(command[1]);
-                        // criar ficheiro com imagem
-                        // dar print
-                        // dps apagar
+                        // assumindo que é para se dar print no terminal
                         BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream((byte[]) in.readObject()));
-                        
+                        String pathUser = "client_side/wineImages/";
+
+                        File foto = new File(pathUser, command[1] + ".jpg");
+                        ImageIO.write(bufferedImage, "jpg", foto);
+
+                        foto.createNewFile();
 
                         System.out.println(in.readObject());
                         break;

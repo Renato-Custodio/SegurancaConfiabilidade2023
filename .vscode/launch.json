@@ -6,13 +6,6 @@
   "configurations": [
     {
       "type": "java",
-      "name": "teste",
-      "request": "launch",
-      "mainClass": "teste",
-      "projectName": "SegurancaConfiabilidade2023_Proj1_c6f68f9c"
-    },
-    {
-      "type": "java",
       "name": "Current File",
       "request": "launch",
       "mainClass": "${file}"
@@ -21,7 +14,7 @@
       "type": "java",
       "name": "Tintolmarket",
       "request": "launch",
-      "mainClass": "Tintolmarket",
+      "mainClass": "client_side.Tintolmarket",
       "projectName": "SegurancaConfiabilidade2023_Proj1_c6f68f9c",
       "args": ["127.0.0.1", "2", "123"]
     },

@@ -296,9 +296,6 @@ public class TintolmarketServer {
 
 		private void add(String wine, byte[] image) throws IOException {
 
-			int width = 1000;
-			int height = 1000;
-
 			BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(image));
 			String pathUser = "server_side/wineImages/";
 
@@ -308,7 +305,6 @@ public class TintolmarketServer {
 			foto.createNewFile();
 
 			wineList.add(new Wine(wine));
-			System.out.println("this");
 		}
 
 		private boolean isNumeric(String str) {
