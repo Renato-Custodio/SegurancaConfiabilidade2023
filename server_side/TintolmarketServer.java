@@ -1,7 +1,5 @@
 package server_side;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -151,12 +149,16 @@ public class TintolmarketServer {
 				if (!found) {
 					// <userID>:<password>
 					myWriter.write(user + ":" + password + "\n");
-					/*
-					 * myWriter = new FileWriter("clientData.txt");
-					 * myWriter.write("");
-					 */
+				}
+
+				if (!userList.contains(new User(user))) {
 					currentUser = new User(user);
 					userList.add(currentUser);
+				} else {
+					currentUser = userList.stream()
+							.filter(us -> us.getName().equals(user)) // verifiquem o que acham disto
+							.findFirst()
+							.get();
 				}
 
 				br.close();
@@ -181,7 +183,7 @@ public class TintolmarketServer {
 				}
 
 				byte[] image = null;
-				String wine = null;
+				String wineName = null;
 				String user = null;
 				Double value = null;
 				Integer quantity = null;
@@ -191,42 +193,48 @@ public class TintolmarketServer {
 					switch (command) {
 						case "a":
 						case "add":
-							wine = (String) inStream.readObject();
+							wineName = (String) inStream.readObject();
 							image = (byte[]) inStream.readObject();
 
-							if (wineList.contains(new Wine(wine))) {
+							if (wineList.contains(new Wine(wineName))) {
 								outStream.writeObject("Vinho Já Existe.");
 								break;
 							}
 
-							add(wine, image);
+							add(wineName, image);
 							outStream.writeObject("Vinho adicionado com sucesso.");
 							break;
 						case "s":
 						case "sell":
-							wine = (String) inStream.readObject();
+							wineName = (String) inStream.readObject();
 							value = (Double) inStream.readObject();
 							quantity = (int) inStream.readObject();
 
-							if (!currentUser.getWines().contains(new Wine(wine))) {
+							if (!wineList.contains(new Wine(wineName))) {
 								outStream.writeObject("Este utilizador não possui este vinho.");
 								break;
 							}
 
-							// Wine userWine = currentUser.getWine(wine);
-							// userWine.setValue(value);
-							// userWine.setQuantity(quantity);
-							// userWine.setSell(true);
+							Wine wine = null;
+							for (Wine vinho : wineList) {
+								if (vinho.getId().equals(wineName)) {
+									wine = vinho;
+									break;
+								}
+							}
+
+							currentUser.sellWine(new WineSell(wine, quantity, value));
 
 							outStream.writeObject(
-									quantity + " unidades de vinho " + wine + " posto à venda a " + value + ".");
+									quantity + " unidades de vinho " + wineName + " posto à venda a " + value
+											+ ".");
 							break;
 						case "v":
 						case "view":
-							wine = (String) inStream.readObject();
-							StringBuilder sb = new StringBuilder("Informações para o vinho " + wine + ":\n");
+							wineName = (String) inStream.readObject();
+							StringBuilder sb = new StringBuilder("Informações para o vinho " + wineName + ":\n");
 							for (User us : userList) {
-								if (us.getWines().contains(new Wine(wine))) {
+								if (us.getWines().contains(new Wine(wineName))) {
 									sb.append("\t" + us.getName() + ":\n");
 									// Wine tempWine = us.getWine(wine);
 									// sb.append("\t\tclassificação media: " + tempWine.getClassificationAvarage() +
@@ -239,7 +247,7 @@ public class TintolmarketServer {
 							break;
 						case "b":
 						case "buy":
-							wine = (String) inStream.readObject();
+							wineName = (String) inStream.readObject();
 							user = (String) inStream.readObject();
 							quantity = (Integer) inStream.readObject();
 							// add logic
@@ -250,7 +258,7 @@ public class TintolmarketServer {
 							break;
 						case "c":
 						case "classify":
-							wine = (String) inStream.readObject();
+							wineName = (String) inStream.readObject();
 							stars = (Integer) inStream.readObject();
 							// add logic
 							break;

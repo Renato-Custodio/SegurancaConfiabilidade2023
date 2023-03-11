@@ -25,8 +25,8 @@ public class User {
         return this.userID;
     }
 
-    public void addWine(Wine wine) {
-        this.wines.add(new WineSell(wine));
+    public void sellWine(WineSell wine) {
+        this.wines.add(wine);
     }
 
     public List<WineSell> getWines() {
@@ -51,5 +51,19 @@ public class User {
 
     public double getBalance() {
         return this.amount;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof User)) {
+            return false;
+        }
+
+        User user = (User) o;
+        return this.userID.equals(user.userID);
     }
 }
