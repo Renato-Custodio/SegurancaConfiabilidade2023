@@ -4,4 +4,4 @@
 .vscode
 .idea
 .class
-/imagens
+/server_side/wineImages/*

@@ -194,22 +194,13 @@ public class TintolmarketServer {
 							wine = (String) inStream.readObject();
 							image = (byte[]) inStream.readObject();
 
-							// verificar se ja existe
-							boolean found = false;
-							for (User us : userList) {
-								if (us.getWines().contains(new Wine(wine))) {
-									outStream.writeObject("Vinho Já Existe.");
-									found = true;
-									break;
-								}
+							if (wineList.contains(new Wine(wine))) {
+								outStream.writeObject("Vinho Já Existe.");
+								break;
 							}
 
-							// talvez seja só currentUser.getWines().contains(new Wine(wine)) ?
-
-							if (!found) {
-								add(wine, image);
-								outStream.writeObject("Vinho adicionado com sucesso.");
-							}
+							add(wine, image);
+							outStream.writeObject("Vinho adicionado com sucesso.");
 							break;
 						case "s":
 						case "sell":
@@ -222,10 +213,10 @@ public class TintolmarketServer {
 								break;
 							}
 
-							Wine userWine = currentUser.getWine(wine);
-							userWine.setValue(value);
-							userWine.setQuantity(quantity);
-							userWine.setSell(true);
+							// Wine userWine = currentUser.getWine(wine);
+							// userWine.setValue(value);
+							// userWine.setQuantity(quantity);
+							// userWine.setSell(true);
 
 							outStream.writeObject(
 									quantity + " unidades de vinho " + wine + " posto à venda a " + value + ".");
@@ -237,9 +228,11 @@ public class TintolmarketServer {
 							for (User us : userList) {
 								if (us.getWines().contains(new Wine(wine))) {
 									sb.append("\t" + us.getName() + ":\n");
-									Wine tempWine = us.getWine(wine);
-									sb.append("\t\tclassificação media: " + tempWine.getClassificationAvarage() + "\n");
-									sb.append("\t\tclassificação media: " + tempWine.getClassificationAvarage() + "\n");
+									// Wine tempWine = us.getWine(wine);
+									// sb.append("\t\tclassificação media: " + tempWine.getClassificationAvarage() +
+									// "\n");
+									// sb.append("\t\tclassificação media: " + tempWine.getClassificationAvarage() +
+									// "\n");
 								}
 							}
 							// add logic
@@ -286,7 +279,7 @@ public class TintolmarketServer {
 			int height = 1000;
 
 			BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(image));
-			String pathUser = "server_side/imagens/";
+			String pathUser = "server_side/wineImages/";
 
 			File foto = new File(pathUser, wine + ".jpg");
 			ImageIO.write(bufferedImage, "jpg", foto);
@@ -294,7 +287,7 @@ public class TintolmarketServer {
 			foto.createNewFile();
 
 			wineList.add(new Wine(wine));
-
+			System.out.println("this");
 		}
 
 		private boolean isNumeric(String str) {

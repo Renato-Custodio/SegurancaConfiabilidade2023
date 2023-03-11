@@ -4,40 +4,24 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-      {
-        "type": "java",
-        "name": "TintolmarketServer",
-        "request": "launch",
-        "mainClass": "server_side.TintolmarketServer",
-        "projectName": "SegurancaConfiabilidade2023_Proj1_c6f68f9c"
-      },
-      {
-        "type": "java",
-        "name": "TintolmarketServer",
-        "request": "launch",
-        "mainClass": "TintolmarketServer",
-        "projectName": "SegurancaConfiabilidade2023_Proj1_1039171b"
-      },
-      {
-        "type": "java",
-        "name": "Current File",
-        "request": "launch",
-        "mainClass": "${file}"
-      },
-      {
-        "type": "java",
-        "name": "Tintolmarket",
-        "request": "launch",
-        "mainClass": "Tintolmarket",
-        "projectName": "SegurancaConfiabilidade2023_Proj1_c6f68f9c",
-        "args": ["127.0.0.1", "2", "123"]
-      },
-      {
-        "type": "java",
-        "name": "TintolmarketServer",
-        "request": "launch",
-        "mainClass": "TintolmarketServer",
-        "projectName": "SegurancaConfiabilidade2023_Proj1_c6f68f9c"
-      }
+        {
+            "type": "java",
+            "name": "TintolmarketServer",
+            "request": "launch",
+            "mainClass": "server_side.TintolmarketServer",
+            "projectName": "SegurancaConfiabilidade2023_Proj1_1039171b"
+        },
+        {
+            "type": "java",
+            "name": "Tintolmarket_Args",
+            "request": "launch",
+            "mainClass": "Tintolmarket",
+            "projectName": "SegurancaConfiabilidade2023_Proj1_1039171b",
+            "args": [
+                "127.0.0.1",
+                "2",
+                "123"
+            ]
+        },
     ]
-  }
+}
