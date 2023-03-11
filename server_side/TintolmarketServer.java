@@ -37,7 +37,7 @@ public class TintolmarketServer {
 	public void startServer(int port) {
 
 		ServerSocket sSoc = null;
-		File f = new File("clientPass.txt");
+		File f = new File("server_side/clientPass.txt");
 		try {
 			f.createNewFile();
 			// ficheiro para guardar informacao
@@ -122,9 +122,9 @@ public class TintolmarketServer {
 		private Boolean authenticate(ObjectOutputStream outStream, String user, String password) {
 			Boolean result = true;
 			try {
-				FileReader myReader = new FileReader("clientPass.txt");
+				FileReader myReader = new FileReader("server_side/clientPass.txt");
 				BufferedReader br = new BufferedReader(myReader);
-				FileWriter myWriter = new FileWriter("clientPass.txt", true);
+				FileWriter myWriter = new FileWriter("server_side/clientPass.txt", true);
 
 				String content;
 				boolean found = false;
@@ -136,29 +136,22 @@ public class TintolmarketServer {
 							result = false;
 							break;
 						}
-						// ver na lista
-						for (User us : userList) {
-							if (us.getName().equals(user)) {
-								currentUser = us;
-								break;
-							}
-						}
 					}
 				}
 
 				if (!found) {
 					// <userID>:<password>
 					myWriter.write(user + ":" + password + "\n");
-				}
-
-				if (!userList.contains(new User(user))) {
-					currentUser = new User(user);
-					userList.add(currentUser);
 				} else {
-					currentUser = userList.stream()
-							.filter(us -> us.getName().equals(user)) // verifiquem o que acham disto
-							.findFirst()
-							.get();
+					if (!userList.contains(new User(user))) {
+						currentUser = new User(user);
+						userList.add(currentUser);
+					} else {
+						currentUser = userList.stream()
+								.filter(us -> us.getName().equals(user)) // verifiquem o que acham disto
+								.findFirst()
+								.get();
+					}
 				}
 
 				br.close();
@@ -233,17 +226,30 @@ public class TintolmarketServer {
 						case "view":
 							wineName = (String) inStream.readObject();
 							StringBuilder sb = new StringBuilder("Informações para o vinho " + wineName + ":\n");
-							for (User us : userList) {
-								if (us.getWines().contains(new Wine(wineName))) {
-									sb.append("\t" + us.getName() + ":\n");
-									// Wine tempWine = us.getWine(wine);
-									// sb.append("\t\tclassificação media: " + tempWine.getClassificationAvarage() +
-									// "\n");
-									// sb.append("\t\tclassificação media: " + tempWine.getClassificationAvarage() +
-									// "\n");
+
+							if (wineList.contains(new Wine(wineName))) {
+								// talvez haja uma forma melhor de fazer
+
+								// dar print da imagem
+								sb.append("\tclassificação media: "
+										+ wineList.get(wineList.indexOf(new Wine(wineName))).getClassificationAvarage()
+										+ "\n");
+								for (User tempUser : userList) {
+									WineSell tempWineSell = tempUser.getWine(wineName);
+									System.out.println(tempUser.getName() + " " + tempUser.getWines());
+									if (tempWineSell != null) {
+										sb.append("\tvendedores:\n");
+										sb.append(
+												"\t\tNome: " + tempUser.getName() + " Preço: "
+														+ tempWineSell.getValue()
+														+ " Quantidade: " + tempWineSell.getQuantity() + "\n");
+									}
 								}
+								outStream.writeObject(sb.toString());
+							} else {
+								outStream.writeObject("Erro : O vinho nao existe");
 							}
-							// add logic
+
 							break;
 						case "b":
 						case "buy":
@@ -275,6 +281,8 @@ public class TintolmarketServer {
 						default:
 							return;
 					}
+					// ver se da de outra maneira
+					userList.set(userList.indexOf(currentUser), currentUser);
 				} catch (IOException | ClassNotFoundException e) {
 					e.printStackTrace(); // TODO different exception handler
 				}

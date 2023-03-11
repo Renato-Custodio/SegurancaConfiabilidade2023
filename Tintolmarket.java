@@ -129,8 +129,7 @@ public class Tintolmarket {
                         out.writeObject(command[0]);
                         out.writeObject(command[1]);
 
-                        in.readObject();
-                        // add logic
+                        System.out.println(in.readObject());
                         break;
                     case "b":
                     case "buy":
