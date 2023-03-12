@@ -7,11 +7,13 @@ public class User {
     private final String userID;
     private final ArrayList<WineSell> wines;
     private double amount;
+    private List<String> messages;
 
     public User(String user) {
         this.wines = new ArrayList<>();
         this.userID = user;
         this.amount = 200;
+        this.messages = new ArrayList<>();
     }
 
     public User(String user, Wine wine) {
@@ -19,6 +21,7 @@ public class User {
         this.userID = user;
         wines.add(new WineSell(wine));
         this.amount = 200;
+        this.messages = new ArrayList<>();
     }
 
     public String getName() {
@@ -55,6 +58,14 @@ public class User {
 
     public void setBalance(Double amount) {
         this.amount = amount;
+    }
+
+    public List<String> readMessages() {
+        return messages;
+    }
+
+    public void reciveMessage(String message) {
+        messages.add(message);
     }
 
     @Override
