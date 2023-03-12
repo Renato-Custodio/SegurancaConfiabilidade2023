@@ -296,7 +296,7 @@ public class TintolmarketServer {
 							break;
 						case "w":
 						case "wallet":
-							// add logic
+							outStream.writeObject(currentUser.getBalance());
 							break;
 						case "c":
 						case "classify":
