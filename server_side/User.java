@@ -53,6 +53,10 @@ public class User {
         return this.amount;
     }
 
+    public void setBalance(Double amount) {
+        this.amount = amount;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

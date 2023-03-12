@@ -259,7 +259,40 @@ public class TintolmarketServer {
 							wineName = (String) inStream.readObject();
 							user = (String) inStream.readObject();
 							quantity = (Integer) inStream.readObject();
-							// add logic
+							// verifica se o vendedor existe
+							if (userList.contains(new User(user))) {
+								User seller = userList.get(userList.indexOf(new User(user)));
+								WineSell sellWine = seller.getWine(wineName);
+								// verifica se o vinho existe
+								if (sellWine != null) {
+									// verifica se o comprador tem saldo suficiente para efetuar a compra
+									if (currentUser.getBalance() >= sellWine.getValue() * quantity) {
+										// verifica se o vendedor tem as unidades requisitadas pelo cliente
+										if (sellWine.getQuantity() >= quantity) {
+											// comprador
+											currentUser.setBalance(
+													currentUser.getBalance() - sellWine.getValue() * quantity);
+
+											// vendedor
+											seller.setBalance(seller.getBalance() + sellWine.getValue() * quantity);
+											sellWine.setQuantity(sellWine.getQuantity() - quantity);
+
+											outStream.writeObject("Compra efetuada com sucesso");
+
+										} else {
+											outStream.writeObject(
+													"A quantidade de unidades requisitadas é superior ao stock disponível");
+										}
+									} else {
+										outStream.writeObject("Saldo insuficiente");
+									}
+								} else {
+									outStream.writeObject("O vinho não existe");
+								}
+							} else {
+								outStream.writeObject("O vendedor não existe");
+							}
+
 							break;
 						case "w":
 						case "wallet":
