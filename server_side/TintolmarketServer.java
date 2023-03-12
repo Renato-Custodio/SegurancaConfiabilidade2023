@@ -302,7 +302,11 @@ public class TintolmarketServer {
 						case "classify":
 							wineName = (String) inStream.readObject();
 							stars = (Integer) inStream.readObject();
-							// add logic
+
+							Wine tempWine = wineList.get(wineList.indexOf(new Wine(wineName)));
+							tempWine.setClassification(stars);
+
+							outStream.writeObject("classificacao efetuada com sucesso");
 							break;
 						case "t":
 						case "talk":

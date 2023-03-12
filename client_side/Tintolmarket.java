@@ -109,22 +109,25 @@ public class Tintolmarket {
                 switch (command[0]) {
                     case "a":
                     case "add":
+                        // pedido ao server
                         out.writeObject(command[0]);
                         out.writeObject(command[1]);
                         File f = new File(command[2]);
                         byte[] content = Files.readAllBytes(f.toPath());
 
                         out.writeObject(content);
-
+                        // resposta do server
                         System.out.println(in.readObject());
                         break;
                     case "s":
                     case "sell":
                         if (isNumeric(command[2]) && isNumeric(command[3])) {
+                            // pedido ao server
                             out.writeObject(command[0]);
                             out.writeObject(command[1]);
                             out.writeObject(Double.parseDouble(command[2]));
                             out.writeObject(Integer.parseInt(command[3]));
+                            // resposta do server
                             System.out.println(in.readObject());
                             break;
                         }
@@ -132,8 +135,12 @@ public class Tintolmarket {
                         break;
                     case "v":
                     case "view":
+                        // pedido ao server
                         out.writeObject(command[0]);
                         out.writeObject(command[1]);
+
+                        // resposta do server
+
                         // assumindo que é para se dar print no terminal
                         BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream((byte[]) in.readObject()));
                         String pathUser = "client_side/wineImages/";
@@ -148,42 +155,57 @@ public class Tintolmarket {
                     case "b":
                     case "buy":
                         if (isNumeric(command[3])) {
+                            // pedido ao server
                             out.writeObject(command[0]);
                             out.writeObject(command[1]);
                             out.writeObject(command[2]);
                             out.writeObject(Integer.parseInt(command[3]));
+                            // resposta do server
+                            System.out.println(in.readObject());
+                        } else {
+                            System.out.println("Invalid Arguments.");
                         }
-                        System.out.println("Invalid Arguments.");
-                        // add logic
 
                         break;
                     case "w":
                     case "wallet":
+                        // pedido ao server
                         out.writeObject(command[0]);
-                        // add logic
+                        // resposta do server
+                        System.out.println("Saldo : " + in.readObject());
                         break;
                     case "c":
                     case "classify":
                         if (isNumeric(command[2])) {
+                            // pedido ao server
                             out.writeObject(command[0]);
                             out.writeObject(command[1]);
                             out.writeObject(Integer.parseInt(command[2]));
+                            // resposta do server
+                            System.out.println(in.readObject());
+                        } else {
+                            System.out.println("Invalid Arguments.");
                         }
                         // add logic
                         break;
                     case "t":
                     case "talk":
+                        // pedido ao server
                         out.writeObject(command[0]);
                         out.writeObject(command[1]);
                         out.writeObject(command[2]);
+                        // resposta do server
                         // add logic
                         break;
                     case "r":
                     case "read":
+                        // pedido ao server
                         out.writeObject(command[0]);
+                        // resposta do server
                         // add logic
                         break;
                     default:
+                        // comando n reconhecido?
                         // Exit Code
                         scanner.close();
                         return;
