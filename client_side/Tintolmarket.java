@@ -186,7 +186,6 @@ public class Tintolmarket {
                         } else {
                             System.out.println("Invalid Arguments.");
                         }
-                        // add logic
                         break;
                     case "t":
                     case "talk":
@@ -195,14 +194,14 @@ public class Tintolmarket {
                         out.writeObject(command[1]);
                         out.writeObject(command[2]);
                         // resposta do server
-                        // add logic
+                        System.out.println(in.readObject());
                         break;
                     case "r":
                     case "read":
                         // pedido ao server
                         out.writeObject(command[0]);
                         // resposta do server
-                        // add logic
+                        System.out.println(in.readObject());
                         break;
                     default:
                         // comando n reconhecido?

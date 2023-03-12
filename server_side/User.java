@@ -1,19 +1,21 @@
 package server_side;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class User {
     private final String userID;
     private final ArrayList<WineSell> wines;
     private double amount;
-    private List<String> messages;
+    private Map<String, List<String>> messages;
 
     public User(String user) {
         this.wines = new ArrayList<>();
         this.userID = user;
         this.amount = 200;
-        this.messages = new ArrayList<>();
+        this.messages = new HashMap<>();
     }
 
     public User(String user, Wine wine) {
@@ -21,7 +23,7 @@ public class User {
         this.userID = user;
         wines.add(new WineSell(wine));
         this.amount = 200;
-        this.messages = new ArrayList<>();
+        this.messages = new HashMap<>();
     }
 
     public String getName() {
@@ -60,12 +62,29 @@ public class User {
         this.amount = amount;
     }
 
-    public List<String> readMessages() {
-        return messages;
+    public String readMessages() {
+        if (messages.isEmpty()) {
+            return "Nao tem novas mesnagens";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, List<String>> entry : messages.entrySet()) {
+            sb.append(entry.getKey() + ":\n");
+            for (String message : entry.getValue()) {
+                sb.append("\t" + message + "\n");
+            }
+        }
+        messages.clear();
+        return sb.toString();
     }
 
-    public void reciveMessage(String message) {
-        messages.add(message);
+    public void reciveMessage(String name, String message) {
+        if (messages.get(name) != null) {
+            messages.get(name).add(message);
+        } else {
+            List<String> tempList = new ArrayList<>();
+            tempList.add(message);
+            messages.put(name, tempList);
+        }
     }
 
     @Override

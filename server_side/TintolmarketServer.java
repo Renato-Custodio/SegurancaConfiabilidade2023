@@ -312,7 +312,10 @@ public class TintolmarketServer {
 						case "talk":
 							user = (String) inStream.readObject();
 							message = (String) inStream.readObject();
-							// add logic
+
+							User tempUser = userList.get(userList.indexOf(new User(user)));
+							tempUser.reciveMessage(currentUser.getName(), message);
+							outStream.writeObject("Mensagem envida");
 							break;
 						case "r":
 						case "read":
