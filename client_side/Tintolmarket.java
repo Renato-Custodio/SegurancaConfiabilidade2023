@@ -204,11 +204,15 @@ public class Tintolmarket {
                         // resposta do server
                         System.out.println(in.readObject());
                         break;
-                    default:
-                        // comando n reconhecido?
-                        // Exit Code
+                    case "q":
+                    case "quit":
                         scanner.close();
-                        return;
+                        in.close();
+                        out.close();
+                        clientSocket.close();
+                        System.exit(0);
+                    default:
+                        System.out.println("Comando nao reconhecido");
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -230,6 +234,7 @@ public class Tintolmarket {
         System.out.println("\tclassify <wine> <stars>");
         System.out.println("\ttalk <user> <message>");
         System.out.println("\tread");
+        System.out.println("\tquit");
     }
 
     private boolean isNumeric(String str) {
