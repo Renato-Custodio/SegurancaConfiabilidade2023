@@ -214,8 +214,7 @@ public class Tintolmarket {
                         scanner.close();
                         in.close();
                         out.close();
-                        clientSocket.close();
-                        System.exit(0);
+                        return;
                     default:
                         System.out.println("Comando nao reconhecido");
                 }
