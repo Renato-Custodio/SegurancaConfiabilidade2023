@@ -25,7 +25,7 @@ public class Tintolmarket {
             System.err.println();
             System.exit(-1);
         }
-        String serverAddress = args[0]; // TODO
+        String serverAddress = args[0];
         String userID = args[1];
         String password;
 
@@ -116,6 +116,7 @@ public class Tintolmarket {
                         byte[] content = Files.readAllBytes(f.toPath());
 
                         out.writeObject(content);
+                        out.writeObject(command[2].split("\\.")[1]);
                         // resposta do server
                         System.out.println(in.readObject());
                         break;

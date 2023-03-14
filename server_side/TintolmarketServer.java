@@ -193,8 +193,7 @@ public class TintolmarketServer {
 								outStream.writeObject("Vinho Já Existe.");
 								break;
 							}
-
-							add(wineName, image);
+							add(wineName, image, (String) inStream.readObject());
 							outStream.writeObject("Vinho adicionado com sucesso.");
 							break;
 						case "s":
@@ -228,14 +227,14 @@ public class TintolmarketServer {
 
 							if (wineList.contains(new Wine(wineName))) {
 
-								// dar print da imagem
+								// envio da imagem
 
 								File f = new File("server_side/wineImages/" + wineName + ".jpg");
 								byte[] content = Files.readAllBytes(f.toPath());
 								outStream.writeObject(content);
 
 								// informacoes
-								sb.append("\tclassificação media: "
+								sb.append("\tclassificacao media: "
 										+ wineList.get(wineList.indexOf(new Wine(wineName))).getClassificationAvarage()
 										+ "\n");
 								for (User tempUser : userList) {
@@ -243,7 +242,7 @@ public class TintolmarketServer {
 									if (tempWineSell != null) {
 										sb.append("\tvendedores:\n");
 										sb.append(
-												"\t\tNome: " + tempUser.getName() + ", Preço: "
+												"\t\tNome: " + tempUser.getName() + ", Preco: "
 														+ tempWineSell.getValue()
 														+ ", Quantidade: " + tempWineSell.getQuantity() + ".\n");
 									}
@@ -325,18 +324,18 @@ public class TintolmarketServer {
 							return;
 					}
 				} catch (IOException | ClassNotFoundException e) {
-					e.printStackTrace(); // TODO different exception handler
+					e.printStackTrace();
 				}
 			}
 		}
 
-		private void add(String wine, byte[] image) throws IOException {
+		private void add(String wine, byte[] image, String extensao) throws IOException {
 
 			BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(image));
 			String pathUser = "server_side/wineImages/";
 
-			File foto = new File(pathUser, wine + ".jpg");
-			ImageIO.write(bufferedImage, "jpg", foto);
+			File foto = new File(pathUser, wine + "." + extensao);
+			ImageIO.write(bufferedImage, extensao, foto);
 
 			foto.createNewFile();
 
