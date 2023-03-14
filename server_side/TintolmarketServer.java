@@ -223,7 +223,7 @@ public class TintolmarketServer {
 						case "v":
 						case "view":
 							wineName = (String) inStream.readObject();
-							StringBuilder sb = new StringBuilder("Informações para o vinho " + wineName + ":\n");
+							StringBuilder sb = new StringBuilder("Informaçoes para o vinho " + wineName + ":\n");
 
 							if (wineList.contains(new Wine(wineName))) {
 
