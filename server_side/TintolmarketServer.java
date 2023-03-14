@@ -319,7 +319,7 @@ public class TintolmarketServer {
 							break;
 						case "r":
 						case "read":
-							// add logic
+							outStream.writeObject(currentUser.readMessages());
 							break;
 						default:
 							return;
