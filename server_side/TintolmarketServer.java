@@ -229,11 +229,19 @@ public class TintolmarketServer {
 
 								// envio da imagem
 
-								File f = new File("server_side/wineImages/" + wineName + ".jpg");
+								File f = null;
+								for (File file : new File("server_side/wineImages/").listFiles()) {
+									if (file.getName().split("\\.")[0].equals(wineName)) {
+										f = file;
+										break;
+									}
+								}
+
 								byte[] content = Files.readAllBytes(f.toPath());
 								outStream.writeObject(content);
-
+								outStream.writeObject(f.getName());
 								// informacoes
+								sb.append("\t Imagem : " + f.getName() + "\n");
 								sb.append("\tclassificacao media: "
 										+ wineList.get(wineList.indexOf(new Wine(wineName))).getClassificationAvarage()
 										+ "\n");
@@ -333,6 +341,10 @@ public class TintolmarketServer {
 
 			BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(image));
 			String pathUser = "server_side/wineImages/";
+
+			File dir = new File(pathUser);
+			if (!dir.exists())
+				dir.mkdir();
 
 			File foto = new File(pathUser, wine + "." + extensao);
 			ImageIO.write(bufferedImage, extensao, foto);

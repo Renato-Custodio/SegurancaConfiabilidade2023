@@ -142,12 +142,17 @@ public class Tintolmarket {
 
                         // resposta do server
 
-                        // assumindo que é para se dar print no terminal
                         BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream((byte[]) in.readObject()));
                         String pathUser = "client_side/wineImages/";
 
-                        File foto = new File(pathUser, command[1] + ".jpg");
-                        ImageIO.write(bufferedImage, "jpg", foto);
+                        File dir = new File(pathUser);
+                        if (!dir.exists())
+                            dir.mkdir();
+
+                        String nomeFicheiro = (String) in.readObject();
+
+                        File foto = new File(pathUser, nomeFicheiro);
+                        ImageIO.write(bufferedImage, nomeFicheiro.split("\\.")[1], foto);
 
                         foto.createNewFile();
 
