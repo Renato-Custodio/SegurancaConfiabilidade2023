@@ -38,23 +38,28 @@ public class TintolmarketServer {
 	public void startServer(int port) {
 
 		ServerSocket sSoc = null;
-		File f = new File("server_side/clientPass.txt");
+		
+		// getbackups
 		try {
+			File f = new File("server_side/clientPass.txt");
 			f.createNewFile();
+
 			// ficheiro para guardar informacao
-			/*
-			 * File file = new File("clientData.txt");
-			 * if (file.createNewFile()) {
-			 * // clientName/outras cenas
-			 * FileReader fileReader = new FileReader(file);
-			 * Scanner reader = new Scanner(fileReader);
-			 * // adiconar à lista de clientes
-			 * while (reader.hasNextLine()) {
-			 * reader.nextLine();
-			 * }
-			 * 
-			 * }
-			 */
+
+			File fileUser = new File("server_side/userList.json");
+			File fileWine = new File("server_side/wineList.json");
+			if (!fileUser.createNewFile()) {
+				// clientName/outras cenas
+				
+				// adiconar à lista de clientes
+				
+
+			}
+
+			if(!fileWine.createNewFile()){
+
+			}
+
 			sSoc = new ServerSocket(port);
 			System.out.println("Servidor a correr...");
 
@@ -171,7 +176,6 @@ public class TintolmarketServer {
 				try {
 					command = (String) inStream.readObject();
 				} catch (ClassNotFoundException | IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 
@@ -186,6 +190,7 @@ public class TintolmarketServer {
 					switch (command) {
 						case "a":
 						case "add":
+							// back up added item
 							wineName = (String) inStream.readObject();
 							image = (byte[]) inStream.readObject();
 
@@ -198,6 +203,7 @@ public class TintolmarketServer {
 							break;
 						case "s":
 						case "sell":
+							// backup sell
 							wineName = (String) inStream.readObject();
 							value = (Double) inStream.readObject();
 							quantity = (int) inStream.readObject();
@@ -263,6 +269,7 @@ public class TintolmarketServer {
 							break;
 						case "b":
 						case "buy":
+							// backup buy
 							wineName = (String) inStream.readObject();
 							user = (String) inStream.readObject();
 							quantity = (Integer) inStream.readObject();
@@ -307,6 +314,7 @@ public class TintolmarketServer {
 							break;
 						case "c":
 						case "classify":
+							// backup classification
 							wineName = (String) inStream.readObject();
 							stars = (Integer) inStream.readObject();
 
@@ -317,6 +325,7 @@ public class TintolmarketServer {
 							break;
 						case "t":
 						case "talk":
+							// backup message
 							user = (String) inStream.readObject();
 							message = (String) inStream.readObject();
 
@@ -326,6 +335,7 @@ public class TintolmarketServer {
 							break;
 						case "r":
 						case "read":
+							// clear backed up messages from currentuser
 							outStream.writeObject(currentUser.readMessages());
 							break;
 						default:

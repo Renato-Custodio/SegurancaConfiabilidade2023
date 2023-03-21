@@ -7,8 +7,8 @@ public class Wine {
     private ArrayList<Integer> stars;
 
     public Wine(String wine) {
-        this.id = wine;
         this.stars = new ArrayList<>();
+        this.id = wine;
     }
 
     public String getId() {
@@ -40,5 +40,27 @@ public class Wine {
         Wine wine = (Wine) o;
 
         return this.id.equals(wine.getId());
+    }
+
+    public static Wine deserialize(String string) {
+        String[] content = string.split(":");
+        String id = content[0];
+        ArrayList<Integer> list = new ArrayList<>();
+        for (String str : content[1].replace("[", "")
+                .replace("]", "")
+                .split(" *, *")) {
+            list.add(Integer.valueOf(str));
+        }
+        Wine wine = new Wine(id);
+        wine.setStars(list);
+        return wine;
+    }
+
+    private void setStars(ArrayList<Integer> stars) {
+        this.stars = stars;
+    }
+
+    public String serialize() {
+        return id + ":" + stars.toString();
     }
 }

@@ -6,6 +6,27 @@
   "configurations": [
     {
       "type": "java",
+      "name": "User",
+      "request": "launch",
+      "mainClass": "server_side.User",
+      "projectName": "SegurancaConfiabilidade2023_Proj1_c6f68f9c"
+    },
+    {
+      "type": "java",
+      "name": "WineSell",
+      "request": "launch",
+      "mainClass": "server_side.WineSell",
+      "projectName": "SegurancaConfiabilidade2023_Proj1_c6f68f9c"
+    },
+    {
+      "type": "java",
+      "name": "Wine",
+      "request": "launch",
+      "mainClass": "server_side.Wine",
+      "projectName": "SegurancaConfiabilidade2023_Proj1_c6f68f9c"
+    },
+    {
+      "type": "java",
       "name": "Current File",
       "request": "launch",
       "mainClass": "${file}"
