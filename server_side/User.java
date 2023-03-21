@@ -113,10 +113,15 @@ public class User {
 
     public String serialize() {
         StringBuilder string = new StringBuilder();
-        for (WineSell wineSell : wines) {
-            string.append(wineSell.serialize() + "\\");
+        Iterator it = wines.iterator();
+        while (it.hasNext()) {
+            WineSell wineSell = (WineSell) it.next();
+            if (it.hasNext()) {
+                string.append(wineSell.serialize() + "\\");
+            } else {
+                string.append(wineSell.serialize());
+            }
         }
-
         return this.userID + "&" + string.toString() + "&" + amount + "&" + serializeMessage();
     }
 
@@ -127,7 +132,6 @@ public class User {
             Map.Entry entry = (Map.Entry) it.next();
             message.append(entry.getKey() + "%");
             if (it.hasNext()) {
-                entry = (Map.Entry) it.next();
                 message.append(entry.getValue().toString() + "\\");
             } else {
                 message.append(entry.getValue().toString());
@@ -136,21 +140,37 @@ public class User {
         return message.toString();
     }
 
-    public static User deserialize(String string) {
+    public static User deserialize(String string, List<Wine> wineList) {
         String[] content = string.split("&");
         User user = new User(content[0]);
-        String[] wineSells = content[1].split(" *\\ *"); // TODO deserialize wineSell
-        user.setWines(null); // todo
+        user.setWines(deserializeWineSell(content[1], wineList));
         user.setBalance(Double.parseDouble(content[2]));
         user.setMessages(deserializeMessages(content[3]));
         return user;
+    }
+
+    private static ArrayList<WineSell> deserializeWineSell(String string, List<Wine> wineList) {
+        ArrayList<WineSell> list = new ArrayList<>();
+        System.out.println(string);
+        if (string.contains("\\")) {
+
+            for (String wine : string.split(" *\\ *")) {
+                System.out.println(wine);
+                WineSell tempSell = WineSell.deserialize(wine, wineList);
+                list.add(tempSell);
+            }
+        } else {
+            list.add(WineSell.deserialize(string, wineList));
+        }
+        return list;
+
     }
 
     private static Map<String, List<String>> deserializeMessages(String string) {
         Map<String, List<String>> msg = new HashMap<>();
         if (string.contains("\\")) {
             for (String temp : string.split(" *\\ *")) {
-                msg.put(string.split(" *% *")[0], Arrays.asList(string.split(" *% *")[1]));
+                msg.put(temp.split(" *% *")[0], Arrays.asList(temp.split(" *% *")[1]));
             }
         } else {
             msg.put(string.split(" *% *")[0], Arrays.asList(string.split(" *% *")[1]));
@@ -168,8 +188,11 @@ public class User {
         user.messages.put("user", list);
         user.messages.put("alberto", list);
         System.out.println(user.serialize());
-
-        User rec = User.deserialize(user.serialize());
+        ArrayList wineList = new ArrayList<>();
+        wineList.add(new Wine("wine"));
+        wineList.add(new Wine("wi"));
+        wineList.add(new Wine("w"));
+        User rec = User.deserialize(user.serialize(), wineList);
         System.out.println(rec.userID + " " + user.amount + " " + user.messages);
 
     }
