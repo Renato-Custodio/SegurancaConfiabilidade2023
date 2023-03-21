@@ -151,11 +151,9 @@ public class User {
 
     private static ArrayList<WineSell> deserializeWineSell(String string, List<Wine> wineList) {
         ArrayList<WineSell> list = new ArrayList<>();
-        System.out.println(string);
         if (string.contains("\\")) {
 
-            for (String wine : string.split(" *\\ *")) {
-                System.out.println(wine);
+            for (String wine : string.split("\\\\")) {
                 WineSell tempSell = WineSell.deserialize(wine, wineList);
                 list.add(tempSell);
             }
@@ -169,11 +167,11 @@ public class User {
     private static Map<String, List<String>> deserializeMessages(String string) {
         Map<String, List<String>> msg = new HashMap<>();
         if (string.contains("\\")) {
-            for (String temp : string.split(" *\\ *")) {
-                msg.put(temp.split(" *% *")[0], Arrays.asList(temp.split(" *% *")[1]));
+            for (String temp : string.split("\\\\")) {
+                msg.put(temp.split("%")[0], Arrays.asList(temp.split("%")[1]));
             }
         } else {
-            msg.put(string.split(" *% *")[0], Arrays.asList(string.split(" *% *")[1]));
+            msg.put(string.split("%")[0], Arrays.asList(string.split("%")[1]));
         }
         return msg;
     }
@@ -193,7 +191,7 @@ public class User {
         wineList.add(new Wine("wi"));
         wineList.add(new Wine("w"));
         User rec = User.deserialize(user.serialize(), wineList);
-        System.out.println(rec.userID + " " + user.amount + " " + user.messages);
+        System.out.println(rec.userID + " " + user.amount + " " + user.messages + " " + user.getWines());
 
     }
 }
