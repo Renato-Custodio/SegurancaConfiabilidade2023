@@ -122,7 +122,7 @@ public class Tintolmarket {
                         break;
                     case "s":
                     case "sell":
-                        if (isNumeric(command[2]) && isNumeric(command[3])) {
+                        if (command.length >= 4 && isNumeric(command[2]) && isNumeric(command[3])) {
                             // pedido ao server
                             out.writeObject(command[0]);
                             out.writeObject(command[1]);
@@ -137,30 +137,37 @@ public class Tintolmarket {
                     case "v":
                     case "view":
                         // pedido ao server
-                        out.writeObject(command[0]);
-                        out.writeObject(command[1]);
+                        if (command.length >= 2) {
+                            out.writeObject(command[0]);
+                            out.writeObject(command[1]);
 
-                        // resposta do server
+                            // resposta do server
+                            if ((Boolean) in.readObject()) {
+                                BufferedImage bufferedImage = ImageIO
+                                        .read(new ByteArrayInputStream((byte[]) in.readObject()));
+                                String pathUser = "client_side/wineImages/";
 
-                        BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream((byte[]) in.readObject()));
-                        String pathUser = "client_side/wineImages/";
+                                File dir = new File(pathUser);
+                                if (!dir.exists())
+                                    dir.mkdir();
 
-                        File dir = new File(pathUser);
-                        if (!dir.exists())
-                            dir.mkdir();
+                                String nomeFicheiro = (String) in.readObject();
 
-                        String nomeFicheiro = (String) in.readObject();
+                                File foto = new File(pathUser, nomeFicheiro);
+                                ImageIO.write(bufferedImage, nomeFicheiro.split("\\.")[1], foto);
 
-                        File foto = new File(pathUser, nomeFicheiro);
-                        ImageIO.write(bufferedImage, nomeFicheiro.split("\\.")[1], foto);
+                                foto.createNewFile();
+                            }
 
-                        foto.createNewFile();
+                            System.out.println(in.readObject());
+                        } else {
+                            System.out.println("Invalid Arguments.");
+                        }
 
-                        System.out.println(in.readObject());
                         break;
                     case "b":
                     case "buy":
-                        if (isNumeric(command[3])) {
+                        if (command.length >= 4 && isNumeric(command[3])) {
                             // pedido ao server
                             out.writeObject(command[0]);
                             out.writeObject(command[1]);
@@ -182,7 +189,7 @@ public class Tintolmarket {
                         break;
                     case "c":
                     case "classify":
-                        if (isNumeric(command[2])) {
+                        if (command.length >= 2 && isNumeric(command[2])) {
                             // pedido ao server
                             out.writeObject(command[0]);
                             out.writeObject(command[1]);
@@ -196,11 +203,15 @@ public class Tintolmarket {
                     case "t":
                     case "talk":
                         // pedido ao server
-                        out.writeObject(command[0]);
-                        out.writeObject(command[1]);
-                        out.writeObject(command[2]);
-                        // resposta do server
-                        System.out.println(in.readObject());
+                        if (command.length >= 3) {
+                            out.writeObject(command[0]);
+                            out.writeObject(command[1]);
+                            out.writeObject(command[2]);
+                            // resposta do server
+                            System.out.println(in.readObject());
+                        }else{
+                            System.out.println("Invalid Arguments.");
+                        }
                         break;
                     case "r":
                     case "read":

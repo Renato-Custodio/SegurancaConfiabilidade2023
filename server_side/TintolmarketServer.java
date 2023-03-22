@@ -228,7 +228,7 @@ public class TintolmarketServer {
 							quantity = (int) inStream.readObject();
 
 							if (!wineList.contains(new Wine(wineName))) {
-								outStream.writeObject("Este utilizador não possui este vinho.");
+								outStream.writeObject("O vinho ainda nao foi adicionado");
 								break;
 							}
 
@@ -261,7 +261,7 @@ public class TintolmarketServer {
 						case "view":
 							wineName = (String) inStream.readObject();
 							StringBuilder sb = new StringBuilder("Informaçoes para o vinho " + wineName + ":\n");
-
+							outStream.writeObject(wineList.contains(new Wine(wineName)));
 							if (wineList.contains(new Wine(wineName))) {
 
 								// envio da imagem
