@@ -66,7 +66,7 @@ public class User {
 
     public String readMessages() {
         if (messages.isEmpty()) {
-            return "Nao tem novas mesnagens";
+            return "Nao tem novas mensagens";
         }
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, List<String>> entry : messages.entrySet()) {
@@ -143,9 +143,11 @@ public class User {
     public static User deserialize(String string, List<Wine> wineList) {
         String[] content = string.split("&");
         User user = new User(content[0]);
-        user.setWines(deserializeWineSell(content[1], wineList));
+        if (!content[1].equals(""))
+            user.setWines(deserializeWineSell(content[1], wineList));
         user.setBalance(Double.parseDouble(content[2]));
-        user.setMessages(deserializeMessages(content[3]));
+        if (content.length > 3)
+            user.setMessages(deserializeMessages(content[3]));
         return user;
     }
 
@@ -176,22 +178,27 @@ public class User {
         return msg;
     }
 
-    public static void main(String[] args) {
-        User user = new User("roberto");
-        user.wines.add(new WineSell(new Wine("joana")));
-        user.wines.add(new WineSell(new Wine("ines")));
-        List<String> list = new ArrayList<String>();
-        list.add("ines");
-        list.add("carlos");
-        user.messages.put("user", list);
-        user.messages.put("alberto", list);
-        System.out.println(user.serialize());
-        ArrayList wineList = new ArrayList<>();
-        wineList.add(new Wine("wine"));
-        wineList.add(new Wine("wi"));
-        wineList.add(new Wine("w"));
-        User rec = User.deserialize(user.serialize(), wineList);
-        System.out.println(rec.userID + " " + user.amount + " " + user.messages + " " + user.getWines());
-
-    }
+    /*
+     * public static void main(String[] args) {
+     * User user = new User("roberto");
+     * user.wines.add(new WineSell(new Wine("joana")));
+     * user.wines.add(new WineSell(new Wine("ines")));
+     * List<String> list = new ArrayList<String>();
+     * list.add("ines");
+     * list.add("carlos");
+     * 
+     * user.messages.put("user", list);
+     * user.messages.put("alberto", list);
+     * 
+     * System.out.println(user.serialize());
+     * ArrayList wineList = new ArrayList<>();
+     * wineList.add(new Wine("wine"));
+     * wineList.add(new Wine("wi"));
+     * wineList.add(new Wine("w"));
+     * User rec = User.deserialize(user.serialize(), wineList);
+     * System.out.println(rec.userID + " " + user.amount + " " + user.messages + " "
+     * + user.getWines());
+     * 
+     * }
+     */
 }

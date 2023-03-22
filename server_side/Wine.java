@@ -46,10 +46,12 @@ public class Wine {
         String[] content = string.split(":");
         String id = content[0];
         ArrayList<Integer> list = new ArrayList<>();
-        for (String str : content[1].replace("[", "")
-                .replace("]", "")
-                .split(" *, *")) {
-            list.add(Integer.valueOf(str));
+        if (!content[1].equals("[]")) {
+            for (String str : content[1].replace("[", "")
+                    .replace("]", "")
+                    .split(" *, *")) {
+                list.add(Integer.valueOf(str));
+            }
         }
         Wine wine = new Wine(id);
         wine.setStars(list);
@@ -63,4 +65,5 @@ public class Wine {
     public String serialize() {
         return id + ":" + stars.toString();
     }
+
 }

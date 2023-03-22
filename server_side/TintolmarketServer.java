@@ -14,6 +14,8 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
+
 import javax.imageio.ImageIO;
 
 //Servidor myServer
@@ -21,6 +23,11 @@ import javax.imageio.ImageIO;
 public class TintolmarketServer {
 	List<User> userList = new ArrayList<>();
 	List<Wine> wineList = new ArrayList<>();
+
+	Scanner readWine;
+	FileWriter writeWine;
+	Scanner readUser;
+	FileWriter writeUser;
 
 	public static void main(String[] args) {
 
@@ -38,7 +45,7 @@ public class TintolmarketServer {
 	public void startServer(int port) {
 
 		ServerSocket sSoc = null;
-		
+
 		// getbackups
 		try {
 			File f = new File("server_side/clientPass.txt");
@@ -46,18 +53,25 @@ public class TintolmarketServer {
 
 			// ficheiro para guardar informacao
 
-			File fileUser = new File("server_side/userList.json");
-			File fileWine = new File("server_side/wineList.json");
-			if (!fileUser.createNewFile()) {
-				// clientName/outras cenas
-				
-				// adiconar à lista de clientes
-				
-
+			File fileUser = new File("server_side/userList.txt");
+			File fileWine = new File("server_side/wineList.txt");
+			Boolean fileBool = fileWine.createNewFile();
+			// testar
+			readWine = new Scanner(fileWine);
+			writeWine = new FileWriter(fileWine, true);
+			if (!fileBool) {
+				while (readWine.hasNext()) {
+					wineList.add(Wine.deserialize(readWine.nextLine()));
+				}
 			}
 
-			if(!fileWine.createNewFile()){
-
+			fileBool = fileUser.createNewFile();
+			readUser = new Scanner(fileUser);
+			writeUser = new FileWriter(fileUser, true);
+			if (!fileBool) {
+				while (readUser.hasNext()) {
+					userList.add(User.deserialize(readUser.nextLine(), wineList));
+				}
 			}
 
 			sSoc = new ServerSocket(port);
@@ -151,6 +165,8 @@ public class TintolmarketServer {
 					if (!userList.contains(new User(user))) {
 						currentUser = new User(user);
 						userList.add(currentUser);
+						writeUser.append(currentUser.serialize() + "\n");
+						writeUser.flush();
 					} else {
 						currentUser = userList.stream()
 								.filter(us -> us.getName().equals(user)) // verifiquem o que acham disto
@@ -171,6 +187,8 @@ public class TintolmarketServer {
 		}
 
 		private void receiveCommands(ObjectInputStream inStream, ObjectOutputStream outStream) {
+			List<String> lines;
+			File fUser = new File("server_side/userList.txt");
 			while (true) {
 				String command = null;
 				try {
@@ -190,7 +208,6 @@ public class TintolmarketServer {
 					switch (command) {
 						case "a":
 						case "add":
-							// back up added item
 							wineName = (String) inStream.readObject();
 							image = (byte[]) inStream.readObject();
 
@@ -198,8 +215,10 @@ public class TintolmarketServer {
 								outStream.writeObject("Vinho Já Existe.");
 								break;
 							}
+							// backup dentro do add
 							add(wineName, image, (String) inStream.readObject());
 							outStream.writeObject("Vinho adicionado com sucesso.");
+
 							break;
 						case "s":
 						case "sell":
@@ -225,6 +244,18 @@ public class TintolmarketServer {
 
 							outStream.writeObject(
 									quantity + " unidades de vinho " + wineName + " posto à venda a " + value + ".");
+							// backup
+							lines = Files.readAllLines(fUser.toPath());
+							for (String tempString : lines) {
+
+								if (tempString.split("&")[0].equals(currentUser.getName())) {
+									lines.remove(tempString);
+									lines.add(currentUser.serialize());
+									Files.write(fUser.toPath(), lines);
+									break;
+								}
+							}
+
 							break;
 						case "v":
 						case "view":
@@ -293,6 +324,22 @@ public class TintolmarketServer {
 
 											outStream.writeObject("Compra efetuada com sucesso");
 
+											// backup
+											lines = Files.readAllLines(fUser.toPath());
+											for (String tempString : lines) {
+
+												if (tempString.split("&")[0].equals(currentUser.getName())) {
+													lines.remove(tempString);
+													lines.add(currentUser.serialize());
+													Files.write(fUser.toPath(), lines);
+												} else if (tempString.split("&")[0].equals(seller.getName())) {
+													lines.remove(tempString);
+													lines.add(seller.serialize());
+													Files.write(fUser.toPath(), lines);
+												}
+
+											}
+
 										} else {
 											outStream.writeObject(
 													"A quantidade de unidades requisitadas é superior ao stock disponível");
@@ -314,7 +361,6 @@ public class TintolmarketServer {
 							break;
 						case "c":
 						case "classify":
-							// backup classification
 							wineName = (String) inStream.readObject();
 							stars = (Integer) inStream.readObject();
 
@@ -322,21 +368,56 @@ public class TintolmarketServer {
 							tempWine.setClassification(stars);
 
 							outStream.writeObject("classificacao efetuada com sucesso");
+							// backup
+							File fWine = new File("server_side/wineList.txt");
+							lines = Files.readAllLines(fWine.toPath());
+							for (String tempString : lines) {
+								if (tempString.split(":")[0].equals(tempWine.getId())) {
+									lines.remove(tempString);
+									lines.add(tempWine.serialize());
+									Files.write(fWine.toPath(), lines);
+									break;
+								}
+							}
 							break;
 						case "t":
 						case "talk":
-							// backup message
 							user = (String) inStream.readObject();
 							message = (String) inStream.readObject();
-
+							if (userList.indexOf(new User(user)) == -1) {
+								outStream.writeObject("O utilizador nao esta no sistema");
+								break;
+							}
 							User tempUser = userList.get(userList.indexOf(new User(user)));
 							tempUser.reciveMessage(currentUser.getName(), message);
 							outStream.writeObject("Mensagem envida");
+							// backup
+							lines = Files.readAllLines(fUser.toPath());
+							for (String tempString : lines) {
+
+								if (tempString.split("&")[0].equals(tempUser.getName())) {
+									lines.remove(tempString);
+									lines.add(tempUser.serialize());
+									Files.write(fUser.toPath(), lines);
+									break;
+								}
+							}
 							break;
 						case "r":
 						case "read":
 							// clear backed up messages from currentuser
 							outStream.writeObject(currentUser.readMessages());
+							// backup
+							lines = Files.readAllLines(fUser.toPath());
+							for (String tempString : lines) {
+
+								if (tempString.split("&")[0].equals(currentUser.getName())) {
+									lines.remove(tempString);
+									lines.add(currentUser.serialize());
+									Files.write(fUser.toPath(), lines);
+									break;
+								}
+							}
 							break;
 						default:
 							return;
@@ -348,7 +429,6 @@ public class TintolmarketServer {
 		}
 
 		private void add(String wine, byte[] image, String extensao) throws IOException {
-
 			BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(image));
 			String pathUser = "server_side/wineImages/";
 
@@ -360,8 +440,10 @@ public class TintolmarketServer {
 			ImageIO.write(bufferedImage, extensao, foto);
 
 			foto.createNewFile();
-
-			wineList.add(new Wine(wine));
+			Wine tempWine = new Wine(wine);
+			writeWine.append(tempWine.serialize() + "\n");
+			writeWine.flush();
+			wineList.add(tempWine);
 		}
 	}
 }
