@@ -13,6 +13,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
 
@@ -208,7 +209,7 @@ public class TintolmarketServer {
 					switch (command) {
 						case "a":
 						case "add":
-							wineName = (String) inStream.readObject();
+							wineName = inStream.readObject().toString();
 							image = (byte[]) inStream.readObject();
 
 							if (wineList.contains(new Wine(wineName))) {
@@ -222,7 +223,6 @@ public class TintolmarketServer {
 							break;
 						case "s":
 						case "sell":
-							// backup sell
 							wineName = (String) inStream.readObject();
 							value = (Double) inStream.readObject();
 							quantity = (int) inStream.readObject();
@@ -240,7 +240,13 @@ public class TintolmarketServer {
 								}
 							}
 
-							currentUser.sellWine(new WineSell(wine, quantity, value));
+							WineSell tWineSell = currentUser.getWine(wineName);
+							if (tWineSell != null) {
+								tWineSell.setQuantity(quantity);
+								tWineSell.setValue(value);
+							} else {
+								currentUser.sellWine(new WineSell(wine, quantity, value));
+							}
 
 							outStream.writeObject(
 									quantity + " unidades de vinho " + wineName + " posto à venda a " + value + ".");
@@ -326,20 +332,17 @@ public class TintolmarketServer {
 
 											// backup
 											lines = Files.readAllLines(fUser.toPath());
-											for (String tempString : lines) {
-
-												if (tempString.split("&")[0].equals(currentUser.getName())) {
-													lines.remove(tempString);
-													lines.add(currentUser.serialize());
-													Files.write(fUser.toPath(), lines);
-												} else if (tempString.split("&")[0].equals(seller.getName())) {
-													lines.remove(tempString);
-													lines.add(seller.serialize());
-													Files.write(fUser.toPath(), lines);
+											for (Iterator<String> iterator = lines.iterator(); iterator.hasNext();) {
+												String tempString = iterator.next();
+												if (tempString.split("&")[0].equals(currentUser.getName()) ||
+														tempString.split("&")[0].equals(seller.getName())) {
+													iterator.remove();
 												}
-
 											}
 
+											lines.add(seller.serialize());
+											lines.add(currentUser.serialize());
+											Files.write(fUser.toPath(), lines);
 										} else {
 											outStream.writeObject(
 													"A quantidade de unidades requisitadas é superior ao stock disponível");
@@ -375,14 +378,18 @@ public class TintolmarketServer {
 							// backup
 							File fWine = new File("server_side/backups/wineList.txt");
 							lines = Files.readAllLines(fWine.toPath());
-							for (String tempString : lines) {
+
+							for (Iterator<String> iterator = lines.iterator(); iterator.hasNext();) {
+								String tempString = iterator.next();
 								if (tempString.split(":")[0].equals(tempWine.getId())) {
-									lines.remove(tempString);
-									lines.add(tempWine.serialize());
-									Files.write(fWine.toPath(), lines);
+									iterator.remove();
 									break;
 								}
 							}
+
+							lines.add(tempWine.serialize());
+							Files.write(fWine.toPath(), lines);
+
 							break;
 						case "t":
 						case "talk":
@@ -393,19 +400,21 @@ public class TintolmarketServer {
 								break;
 							}
 							User tempUser = userList.get(userList.indexOf(new User(user)));
-							tempUser.reciveMessage(currentUser.getName(), message);
+							tempUser.receiveMessage(currentUser.getName(), message);
 							outStream.writeObject("Mensagem envida");
 							// backup
 							lines = Files.readAllLines(fUser.toPath());
-							for (String tempString : lines) {
 
+							for (Iterator<String> iterator = lines.iterator(); iterator.hasNext();) {
+								String tempString = iterator.next();
 								if (tempString.split("&")[0].equals(tempUser.getName())) {
-									lines.remove(tempString);
-									lines.add(tempUser.serialize());
-									Files.write(fUser.toPath(), lines);
+									iterator.remove();
 									break;
 								}
 							}
+							lines.add(tempUser.serialize());
+							Files.write(fUser.toPath(), lines);
+
 							break;
 						case "r":
 						case "read":
@@ -413,15 +422,17 @@ public class TintolmarketServer {
 							outStream.writeObject(currentUser.readMessages());
 							// backup
 							lines = Files.readAllLines(fUser.toPath());
-							for (String tempString : lines) {
 
+							for (Iterator<String> iterator = lines.iterator(); iterator.hasNext();) {
+								String tempString = iterator.next();
 								if (tempString.split("&")[0].equals(currentUser.getName())) {
-									lines.remove(tempString);
-									lines.add(currentUser.serialize());
-									Files.write(fUser.toPath(), lines);
+									iterator.remove();
 									break;
 								}
 							}
+
+							lines.add(currentUser.serialize());
+							Files.write(fUser.toPath(), lines);
 							break;
 						default:
 							return;

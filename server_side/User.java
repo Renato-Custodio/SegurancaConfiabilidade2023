@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedList;
 
 public class User {
     private final String userID;
@@ -80,7 +81,7 @@ public class User {
         return sb.toString();
     }
 
-    public void reciveMessage(String name, String message) {
+    public void receiveMessage(String name, String message) {
         if (messages.get(name) != null) {
             messages.get(name).add(message);
         } else {
@@ -171,35 +172,15 @@ public class User {
         Map<String, List<String>> msg = new HashMap<>();
         if (string.contains("\\")) {
             for (String temp : string.split("\\\\")) {
-                msg.put(temp.split("%")[0], Arrays.asList(temp.split("%")[1]));
+                String message = temp.split("%")[1];
+                msg.put(temp.split("%")[0],
+                        new LinkedList<>(Arrays.asList(message.substring(1, message.length() - 1).split(" *, *"))));
             }
         } else {
-            msg.put(string.split("%")[0], Arrays.asList(string.split("%")[1]));
+            String message = string.split("%")[1];
+            msg.put(string.split("%")[0],
+                    new LinkedList<>(Arrays.asList(message.substring(1, message.length() - 1).split(" *, *"))));
         }
         return msg;
     }
-
-    /*
-     * public static void main(String[] args) {
-     * User user = new User("roberto");
-     * user.wines.add(new WineSell(new Wine("joana")));
-     * user.wines.add(new WineSell(new Wine("ines")));
-     * List<String> list = new ArrayList<String>();
-     * list.add("ines");
-     * list.add("carlos");
-     * 
-     * user.messages.put("user", list);
-     * user.messages.put("alberto", list);
-     * 
-     * System.out.println(user.serialize());
-     * ArrayList wineList = new ArrayList<>();
-     * wineList.add(new Wine("wine"));
-     * wineList.add(new Wine("wi"));
-     * wineList.add(new Wine("w"));
-     * User rec = User.deserialize(user.serialize(), wineList);
-     * System.out.println(rec.userID + " " + user.amount + " " + user.messages + " "
-     * + user.getWines());
-     * 
-     * }
-     */
 }

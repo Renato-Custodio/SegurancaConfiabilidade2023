@@ -110,10 +110,10 @@ public class Tintolmarket {
                     case "a":
                     case "add":
                         // pedido ao server
-                        out.writeObject(command[0]);
-                        out.writeObject(command[1]);
                         File f = new File(command[2]);
                         if (f.exists()) {
+                            out.writeObject(command[0]);
+                            out.writeObject(command[1]);
                             byte[] content = Files.readAllBytes(f.toPath());
 
                             out.writeObject(content);
@@ -208,11 +208,16 @@ public class Tintolmarket {
                     case "talk":
                         // pedido ao server
                         if (command.length >= 3) {
-                            out.writeObject(command[0]);
-                            out.writeObject(command[1]);
-                            out.writeObject(command[2]);
+                            if (command[2].replace(",", "").length() > 0) {
+                                System.out.println("entrei");
+                                out.writeObject(command[0]);
+                                out.writeObject(command[1]);
+                                out.writeObject(command[2].replace(",", ""));
+                                System.out.println(in.readObject());
+                            } else {
+                                System.out.println("Message cannot only have commas.");
+                            }
                             // resposta do server
-                            System.out.println(in.readObject());
                         } else {
                             System.out.println("Invalid Arguments.");
                         }
