@@ -107,7 +107,6 @@ public class TintolmarketServer {
 
 		ServerThread(Socket inSoc) {
 			socket = inSoc;
-			System.out.println("thread do server para cada cliente"); // tirar
 		}
 
 		public void run() {
@@ -174,7 +173,7 @@ public class TintolmarketServer {
 					writeUser.flush();
 				} else {
 					currentUser = userList.stream()
-							.filter(us -> us.getName().equals(user)) // verifiquem o que acham disto
+							.filter(us -> us.getName().equals(user))
 							.findFirst()
 							.get();
 				}
@@ -197,18 +196,15 @@ public class TintolmarketServer {
 				String command = null;
 				try {
 					command = (String) inStream.readObject();
-				} catch (ClassNotFoundException | IOException e) {
-					e.printStackTrace();
-				}
 
-				byte[] image = null;
-				String wineName = null;
-				String user = null;
-				Double value = null;
-				Integer quantity = null;
-				Integer stars = null;
-				String message = null;
-				try {
+					byte[] image = null;
+					String wineName = null;
+					String user = null;
+					Double value = null;
+					Integer quantity = null;
+					Integer stars = null;
+					String message = null;
+
 					switch (command) {
 						case "a":
 						case "add":
@@ -431,7 +427,7 @@ public class TintolmarketServer {
 							return;
 					}
 				} catch (IOException | ClassNotFoundException e) {
-					e.printStackTrace();
+					// server continua a correr sem problemas
 				}
 			}
 		}
