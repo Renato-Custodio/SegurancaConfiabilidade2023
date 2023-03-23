@@ -282,7 +282,7 @@ public class TintolmarketServer {
 								outStream.writeObject(content);
 								outStream.writeObject(f.getName());
 								// informacoes
-								sb.append("\t Imagem : " + f.getName() + "\n");
+								sb.append("\tImagem : " + f.getName() + "\n");
 								sb.append("\tclassificacao media: "
 										+ wineList.get(wineList.indexOf(new Wine(wineName))).getClassificationAvarage()
 										+ "\n");
