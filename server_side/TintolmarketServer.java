@@ -363,6 +363,9 @@ public class TintolmarketServer {
 						case "classify":
 							wineName = (String) inStream.readObject();
 							stars = (Integer) inStream.readObject();
+							if (!wineList.contains(new Wine(wineName))) {
+								outStream.writeObject("Classificacao Falhada - Vinho inexistente");
+							}
 
 							Wine tempWine = wineList.get(wineList.indexOf(new Wine(wineName)));
 							tempWine.setClassification(stars);
