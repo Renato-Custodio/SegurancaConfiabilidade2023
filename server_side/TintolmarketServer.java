@@ -165,18 +165,18 @@ public class TintolmarketServer {
 				if (!found) {
 					// <userID>:<password>
 					myWriter.write(user + ":" + password + "\n");
+				}
+
+				if (!userList.contains(new User(user))) {
+					currentUser = new User(user);
+					userList.add(currentUser);
+					writeUser.append(currentUser.serialize() + "\n");
+					writeUser.flush();
 				} else {
-					if (!userList.contains(new User(user))) {
-						currentUser = new User(user);
-						userList.add(currentUser);
-						writeUser.append(currentUser.serialize() + "\n");
-						writeUser.flush();
-					} else {
-						currentUser = userList.stream()
-								.filter(us -> us.getName().equals(user)) // verifiquem o que acham disto
-								.findFirst()
-								.get();
-					}
+					currentUser = userList.stream()
+							.filter(us -> us.getName().equals(user)) // verifiquem o que acham disto
+							.findFirst()
+							.get();
 				}
 
 				br.close();
