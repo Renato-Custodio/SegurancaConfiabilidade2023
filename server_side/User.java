@@ -69,10 +69,11 @@ public class User {
             return "Nao tem novas mensagens";
         }
         StringBuilder sb = new StringBuilder();
+        sb.append("Caixa de entrada:\n");
         for (Map.Entry<String, List<String>> entry : messages.entrySet()) {
-            sb.append(entry.getKey() + ":\n");
+            sb.append("\t" + entry.getKey() + ":\n");
             for (String message : entry.getValue()) {
-                sb.append("\t" + message + "\n");
+                sb.append("\t\t" + message + "\n");
             }
         }
         messages.clear();

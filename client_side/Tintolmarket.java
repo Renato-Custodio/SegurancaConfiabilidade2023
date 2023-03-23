@@ -113,12 +113,16 @@ public class Tintolmarket {
                         out.writeObject(command[0]);
                         out.writeObject(command[1]);
                         File f = new File(command[2]);
-                        byte[] content = Files.readAllBytes(f.toPath());
+                        if (f.exists()) {
+                            byte[] content = Files.readAllBytes(f.toPath());
 
-                        out.writeObject(content);
-                        out.writeObject(command[2].split("\\.")[1]);
-                        // resposta do server
-                        System.out.println(in.readObject());
+                            out.writeObject(content);
+                            out.writeObject(command[2].split("\\.")[1]);
+                            // resposta do server
+                            System.out.println(in.readObject());
+                        } else {
+                            System.out.println("A imagem nao existe");
+                        }
                         break;
                     case "s":
                     case "sell":
@@ -209,7 +213,7 @@ public class Tintolmarket {
                             out.writeObject(command[2]);
                             // resposta do server
                             System.out.println(in.readObject());
-                        }else{
+                        } else {
                             System.out.println("Invalid Arguments.");
                         }
                         break;

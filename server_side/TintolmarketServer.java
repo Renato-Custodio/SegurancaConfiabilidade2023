@@ -48,13 +48,17 @@ public class TintolmarketServer {
 
 		// getbackups
 		try {
-			File f = new File("server_side/clientPass.txt");
+			File f = new File("server_side//clientPass.txt");
 			f.createNewFile();
 
 			// ficheiro para guardar informacao
 
-			File fileUser = new File("server_side/userList.txt");
-			File fileWine = new File("server_side/wineList.txt");
+			File dir = new File("server_side/backups");
+			if (!dir.exists())
+				dir.mkdir();
+
+			File fileUser = new File("server_side/backups/userList.txt");
+			File fileWine = new File("server_side/backups/wineList.txt");
 			Boolean fileBool = fileWine.createNewFile();
 			// testar
 			readWine = new Scanner(fileWine);
@@ -188,7 +192,7 @@ public class TintolmarketServer {
 
 		private void receiveCommands(ObjectInputStream inStream, ObjectOutputStream outStream) {
 			List<String> lines;
-			File fUser = new File("server_side/userList.txt");
+			File fUser = new File("server_side/backups/userList.txt");
 			while (true) {
 				String command = null;
 				try {
@@ -259,7 +263,7 @@ public class TintolmarketServer {
 							break;
 						case "v":
 						case "view":
-							wineName = (String) inStream.readObject();
+							wineName = inStream.readObject().toString();
 							StringBuilder sb = new StringBuilder("Informaçoes para o vinho " + wineName + ":\n");
 							outStream.writeObject(wineList.contains(new Wine(wineName)));
 							if (wineList.contains(new Wine(wineName))) {
@@ -348,10 +352,10 @@ public class TintolmarketServer {
 										outStream.writeObject("Saldo insuficiente");
 									}
 								} else {
-									outStream.writeObject("O vinho não existe");
+									outStream.writeObject("O vinho nao existe");
 								}
 							} else {
-								outStream.writeObject("O vendedor não existe");
+								outStream.writeObject("O vendedor nao existe");
 							}
 
 							break;
@@ -373,7 +377,7 @@ public class TintolmarketServer {
 
 							outStream.writeObject("classificacao efetuada com sucesso");
 							// backup
-							File fWine = new File("server_side/wineList.txt");
+							File fWine = new File("server_side/backups/wineList.txt");
 							lines = Files.readAllLines(fWine.toPath());
 							for (String tempString : lines) {
 								if (tempString.split(":")[0].equals(tempWine.getId())) {
