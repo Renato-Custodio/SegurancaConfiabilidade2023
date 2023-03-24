@@ -19,10 +19,11 @@ Grupo SegC-002
 		
 		Correr o JAR
 		Servidor:  java -jar TintolMarketServer.jar <port>
-		Cliente: java -jar TintolMarket.jar 127.0.0.1:<port> <user> <password>
+		Cliente: java -jar TintolMarket.jar <serverAddress> <userID> [password]
+
 
 2. Limitacoes
-	O trabalho foi desenvolvido e testado em SO's Windows e macOS, n o tendo havido qualquer problema relativamente 
+	O trabalho foi desenvolvido e testado em SO's Windows e macOS, nao tendo havido qualquer problema relativamente 
 	 as "/" utilizado para os caminhos de directorias.
 	
 
