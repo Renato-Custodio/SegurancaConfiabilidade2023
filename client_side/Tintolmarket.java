@@ -9,24 +9,33 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.util.Scanner;
 
 import javax.imageio.ImageIO;
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 
 public class Tintolmarket {
     private Socket clientSocket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
 
-    public static void main(String[] args) throws FileNotFoundException, KeyStoreException {
+    public static void main(String[] args) throws FileNotFoundException, KeyStoreException, UnrecoverableKeyException,
+            NoSuchAlgorithmException, CertificateException, InvalidKeyException, SignatureException {
 
         if (args.length < 5) {
             System.err.println();
@@ -36,9 +45,12 @@ public class Tintolmarket {
             System.err.println();
             System.exit(-1);
         }
+        // distribute args
         String serverAddress = args[0];
-        String userID = args[1];
-        String password;
+        String truststore = args[1];
+        String keyStore = args[2];
+        String pass = args[3];
+        String userID = args[4];
 
         Tintolmarket client = new Tintolmarket();
         // set Propreties
@@ -53,17 +65,19 @@ public class Tintolmarket {
         }
 
         // get public key
-        FileInputStream kfile = new FileInputStream(args[1]); // keystore
-        KeyStore kstore = KeyStore.getInstance("JCEKS");
+        FileInputStream kfile = new FileInputStream(truststore); // keystore
+        KeyStore kstore = KeyStore.getInstance("JKS");
         try {
             kstore.load(kfile, "123456".toCharArray());
         } catch (NoSuchAlgorithmException | CertificateException | IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        Certificate certificate = kstore.getCertificate(args[2]);
 
-        if (client.login(userID, certificate)) {
+        Certificate certificate = kstore
+                .getCertificate(keyStore.substring(keyStore.length() - 8, keyStore.length() - 3).toLowerCase());
+
+        if (client.login(userID, certificate, keyStore, pass, truststore)) {
             printCommands();
         } else {
             /// se que voltar a pedir a pass
@@ -87,7 +101,8 @@ public class Tintolmarket {
     public Socket connectClient(String host, int port) {
         Socket clientSocket = null;
         try {
-            clientSocket = new Socket(host, port);
+            SocketFactory sf = SSLSocketFactory.getDefault();
+            clientSocket = (SSLSocket) sf.createSocket(host, port);
             System.out.println("connected");
             in = new ObjectInputStream(clientSocket.getInputStream());
             out = new ObjectOutputStream(clientSocket.getOutputStream());
@@ -99,14 +114,50 @@ public class Tintolmarket {
         return clientSocket;
     }
 
-    private Boolean login(String userID, Certificate certificate) {
+    private Boolean login(String userID, Certificate certificate, String keyStore, String pass, String truststore)
+            throws KeyStoreException, NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException,
+            InvalidKeyException, SignatureException {
         Boolean isUser = false;
         try {
 
             out.writeObject(userID);
-            out.writeObject(certificate.getPublicKey());
+            long nonce = (long) in.readObject();
+            if ((boolean) in.readObject()) {
+                // user login
+                // sign nonce
+                FileInputStream kfile = new FileInputStream(keyStore); // keystore
+                KeyStore kstore = KeyStore.getInstance("JKS");
+                kstore.load(kfile, pass.toCharArray());
+                String alias = keyStore.substring(keyStore.length() - 8, keyStore.length() - 3).toLowerCase();
+                PrivateKey privateKey = (PrivateKey) kstore.getKey(alias, pass.toCharArray());
+                Signature s = Signature.getInstance("MD5withRSA");
+                s.initSign(privateKey);
+                byte[] bytes = ByteBuffer.allocate(Long.BYTES).putLong(nonce).array();
+                s.update(bytes);
+                out.writeObject(s.sign());
+                System.out.println(in.readObject());
+            } else {
+                // recived nonce
+                out.writeObject(nonce);
+                // signed nonce
+                FileInputStream kfile = new FileInputStream(keyStore); // keystore
+                KeyStore kstore = KeyStore.getInstance("JKS");
+                kstore.load(kfile, pass.toCharArray());
+                String alias = keyStore.substring(keyStore.length() - 8, keyStore.length() - 3).toLowerCase();
+                PrivateKey privateKey = (PrivateKey) kstore.getKey(alias, pass.toCharArray());
+                Signature s = Signature.getInstance("MD5withRSA");
+                s.initSign(privateKey);
+                byte[] bytes = ByteBuffer.allocate(Long.BYTES).putLong(nonce).array();
+                s.update(bytes);
+                out.writeObject(s.sign());
+                // certificate
+                FileInputStream tfile = new FileInputStream(truststore); // keystore
+                KeyStore tstore = KeyStore.getInstance("JKS");
+                tstore.load(kfile, pass.toCharArray());
+                out.writeObject(tstore.getCertificate(alias));
 
-            isUser = (Boolean) in.readObject();
+                System.out.println(in.readObject()); 
+            }
 
         } catch (IOException | ClassNotFoundException e) {
             System.err.println(e.getMessage());

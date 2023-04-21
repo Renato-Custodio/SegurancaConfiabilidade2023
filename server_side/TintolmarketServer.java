@@ -4,16 +4,29 @@ import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.cert.Certificate;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.Scanner;
 
 import javax.imageio.ImageIO;
@@ -32,6 +45,7 @@ public class TintolmarketServer {
 	FileWriter writeWine;
 	Scanner readUser;
 	FileWriter writeUser;
+	String passCifra;
 
 	public static void main(String[] args) {
 		// a pass de tudo é 123456
@@ -39,8 +53,16 @@ public class TintolmarketServer {
 		TintolmarketServer server = new TintolmarketServer();
 		System.err.println("Forma de uso: TintolmarketServer <port> <password-cifra> <keystore> <password-keystore>");
 		if (checkArgs(args)) {
-			System.setProperty("javax.net.ssl.keyStore", "server_side/Key/ServerKey");
-			System.setProperty("javax.net.ssl.keyStorePassword", "123456");
+			// assign vars
+			int setArgs = 0;
+			if (args.length == 3) {
+				setArgs = 1;
+			}
+
+			System.setProperty("javax.net.ssl.keyStore", args[2 - setArgs]);
+			System.setProperty("javax.net.ssl.keyStorePassword", args[3 - setArgs]);
+
+			server.passCifra = args[1 - setArgs];
 
 			if (args.length == 4) {
 				server.startServer(Integer.valueOf(args[0]));
@@ -97,7 +119,7 @@ public class TintolmarketServer {
 					userList.add(User.deserialize(readUser.nextLine(), wineList));
 				}
 			}
-		
+
 			// create secure connection
 			ServerSocketFactory ssf = SSLServerSocketFactory.getDefault();
 			sSoc = (SSLServerSocket) ssf.createServerSocket(port);
@@ -126,6 +148,8 @@ public class TintolmarketServer {
 
 		private Socket socket = null;
 		private User currentUser;
+		private ObjectOutputStream outStream;
+		private ObjectInputStream inStream;
 
 		ServerThread(Socket inSoc) {
 			socket = inSoc;
@@ -134,23 +158,20 @@ public class TintolmarketServer {
 		public void run() {
 
 			try {
-				ObjectOutputStream outStream = new ObjectOutputStream(socket.getOutputStream());
-				ObjectInputStream inStream = new ObjectInputStream(socket.getInputStream());
+				outStream = new ObjectOutputStream(socket.getOutputStream());
+				inStream = new ObjectInputStream(socket.getInputStream());
 
 				// user authentication
 
 				String user = null;
-				String password = null;
 
 				try {
 					user = (String) inStream.readObject();
-					password = (String) inStream.readObject();
-
 				} catch (ClassNotFoundException e1) {
 					e1.printStackTrace();
 				}
 
-				boolean authentication = authenticate(outStream, user, password);
+				boolean authentication = authenticate(user);
 				outStream.writeObject(authentication);
 				if (authentication) {
 					receiveCommands(inStream, outStream);
@@ -158,12 +179,14 @@ public class TintolmarketServer {
 				outStream.close();
 				inStream.close();
 				socket.close();
-			} catch (IOException e) {
+			} catch (IOException | ClassNotFoundException | InvalidKeyException | SignatureException
+					| InvalidKeySpecException | NoSuchAlgorithmException e) {
 				e.printStackTrace();
 			}
 		}
 
-		private Boolean authenticate(ObjectOutputStream outStream, String user, String password) {
+		private Boolean authenticate(String user) throws ClassNotFoundException, SignatureException,
+				InvalidKeyException, InvalidKeySpecException, NoSuchAlgorithmException {
 			Boolean result = true;
 			try {
 				FileReader myReader = new FileReader("server_side/clientPass.txt");
@@ -171,21 +194,43 @@ public class TintolmarketServer {
 				FileWriter myWriter = new FileWriter("server_side/clientPass.txt", true);
 
 				String content;
-				boolean found = false;
+				String[] found = null;
 				while ((content = br.readLine()) != null) {
 					String[] userPass = content.split(":");
 					if (userPass[0].equals(user)) {
-						found = true;
-						if (!userPass[1].equals(password)) {
-							result = false;
-							break;
-						}
+						found = userPass;
 					}
 				}
 
-				if (!found) {
+				Random random = new Random();
+				long nonce = random.nextInt(9900000) + 100000;
+
+				outStream.writeObject(nonce);
+				byte[] recivedNonce = (byte[]) inStream.readObject();
+				outStream.writeObject(found == null);
+				if (found == null) {
 					// <userID>:<password>
-					myWriter.write(user + ":" + password + "\n");
+					long verifyNonce = (long) inStream.readObject();
+					byte[] signedNonce = (byte[]) inStream.readObject();
+					Certificate certificate = (Certificate) inStream.readObject();
+					if (verifyNonce != nonce) {
+						return false;
+					}
+					Signature s = Signature.getInstance("MD5withRSA");
+					s.initVerify(certificate.getPublicKey());
+
+					if (!s.verify(recivedNonce))
+						return false;
+					// verificar se funciona a autenticacao
+					myWriter.write(user + ":" + certificate.getPublicKey().getEncoded().toString() + "\n");
+				} else {
+					Signature s = Signature.getInstance("MD5withRSA");
+					byte[] publicKeyBytes = found[1].getBytes();
+					PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(publicKeyBytes);
+					KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+					PublicKey publicKey = keyFactory.generatePublic(spec);
+					s.initVerify(publicKey);
+					outStream.writeObject(s.verify(recivedNonce));
 				}
 
 				if (!userList.contains(new User(user))) {
