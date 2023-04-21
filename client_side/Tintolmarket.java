@@ -3,11 +3,20 @@ package client_side;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.security.Key;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.util.Scanner;
 
 import javax.imageio.ImageIO;
@@ -17,11 +26,13 @@ public class Tintolmarket {
     private ObjectOutputStream out;
     private ObjectInputStream in;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FileNotFoundException, KeyStoreException {
 
-        if (args.length < 2) {
+        if (args.length < 5) {
             System.err.println();
             System.err.println("Forma de uso: Tintolmarket <serverAddress> <userID> [password]");
+            System.err.println(
+                    "Forma de uso: Tintolmarket <serverAddress> <truststore> <keystore> <password-keystore> <userID>");
             System.err.println();
             System.exit(-1);
         }
@@ -30,6 +41,9 @@ public class Tintolmarket {
         String password;
 
         Tintolmarket client = new Tintolmarket();
+        // set Propreties
+        System.setProperty("javax.net.ssl.trustStore", args[1]);
+        System.setProperty("javax.net.ssl.trustStorePassword", args[3]);
 
         if (serverAddress.indexOf(":") != -1) {
             String[] hostPort = serverAddress.split(":");
@@ -38,16 +52,18 @@ public class Tintolmarket {
             client.clientSocket = client.connectClient(args[0], 12345);
         }
 
-        if (args.length == 3) {
-            password = args[2];
-        } else {
-            System.out.print("Introduza a password por favor : ");
-            Scanner reader = new Scanner(System.in);
-            password = reader.nextLine();
-            reader.close();
+        // get public key
+        FileInputStream kfile = new FileInputStream(args[1]); // keystore
+        KeyStore kstore = KeyStore.getInstance("JCEKS");
+        try {
+            kstore.load(kfile, "123456".toCharArray());
+        } catch (NoSuchAlgorithmException | CertificateException | IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
+        Certificate certificate = kstore.getCertificate(args[2]);
 
-        if (client.login(userID, password)) {
+        if (client.login(userID, certificate)) {
             printCommands();
         } else {
             /// se que voltar a pedir a pass
@@ -83,12 +99,12 @@ public class Tintolmarket {
         return clientSocket;
     }
 
-    private Boolean login(String userID, String password) {
+    private Boolean login(String userID, Certificate certificate) {
         Boolean isUser = false;
         try {
 
             out.writeObject(userID);
-            out.writeObject(password);
+            out.writeObject(certificate.getPublicKey());
 
             isUser = (Boolean) in.readObject();
 
