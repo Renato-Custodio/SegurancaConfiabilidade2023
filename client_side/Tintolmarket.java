@@ -30,7 +30,7 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 public class Tintolmarket {
-    private Socket clientSocket;
+    private SSLSocket clientSocket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
 
@@ -98,8 +98,8 @@ public class Tintolmarket {
 
     }
 
-    public Socket connectClient(String host, int port) {
-        Socket clientSocket = null;
+    public SSLSocket connectClient(String host, int port) {
+        SSLSocket clientSocket = null;
         try {
             SocketFactory sf = SSLSocketFactory.getDefault();
             clientSocket = (SSLSocket) sf.createSocket(host, port);
@@ -122,7 +122,7 @@ public class Tintolmarket {
 
             out.writeObject(userID);
             long nonce = (long) in.readObject();
-            if ((boolean) in.readObject()) {
+            if ((boolean) in.readObject()) { // TODO REMOVE DUPLICATED CODE
                 // user login
                 // sign nonce
                 FileInputStream kfile = new FileInputStream(keyStore); // keystore
@@ -153,10 +153,10 @@ public class Tintolmarket {
                 // certificate
                 FileInputStream tfile = new FileInputStream(truststore); // keystore
                 KeyStore tstore = KeyStore.getInstance("JKS");
-                tstore.load(kfile, pass.toCharArray());
+                tstore.load(tfile, pass.toCharArray());
                 out.writeObject(tstore.getCertificate(alias));
 
-                System.out.println(in.readObject()); 
+                System.out.println(in.readObject());
             }
 
         } catch (IOException | ClassNotFoundException e) {

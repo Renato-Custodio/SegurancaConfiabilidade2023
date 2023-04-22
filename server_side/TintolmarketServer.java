@@ -206,24 +206,28 @@ public class TintolmarketServer {
 				long nonce = random.nextInt(9900000) + 100000;
 
 				outStream.writeObject(nonce);
-				byte[] recivedNonce = (byte[]) inStream.readObject();
-				outStream.writeObject(found == null);
+				outStream.writeObject(found != null);
 				if (found == null) {
 					// <userID>:<password>
 					long verifyNonce = (long) inStream.readObject();
 					byte[] signedNonce = (byte[]) inStream.readObject();
 					Certificate certificate = (Certificate) inStream.readObject();
+
 					if (verifyNonce != nonce) {
 						return false;
 					}
+
 					Signature s = Signature.getInstance("MD5withRSA");
 					s.initVerify(certificate.getPublicKey());
-
-					if (!s.verify(recivedNonce))
+					System.out.println(s.verify(signedNonce));
+					if (!s.verify(signedNonce)) {
 						return false;
+					}
+					System.out.println("entrei");
 					// verificar se funciona a autenticacao
 					myWriter.write(user + ":" + certificate.getPublicKey().getEncoded().toString() + "\n");
 				} else {
+					byte[] recivedNonce = (byte[]) inStream.readObject();
 					Signature s = Signature.getInstance("MD5withRSA");
 					byte[] publicKeyBytes = found[1].getBytes();
 					PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(publicKeyBytes);
