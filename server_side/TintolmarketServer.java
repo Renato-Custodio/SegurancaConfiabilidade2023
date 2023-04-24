@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
@@ -23,7 +24,11 @@ import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -187,7 +192,7 @@ public class TintolmarketServer {
 
 		private Boolean authenticate(String user) throws ClassNotFoundException, SignatureException,
 				InvalidKeyException, InvalidKeySpecException, NoSuchAlgorithmException {
-			Boolean result = true;
+
 			try {
 				FileReader myReader = new FileReader("server_side/clientPass.txt");
 				BufferedReader br = new BufferedReader(myReader);
@@ -203,10 +208,12 @@ public class TintolmarketServer {
 				}
 
 				Random random = new Random();
-				long nonce = random.nextInt(9900000) + 100000;
+				long nonce = random.nextInt(9900000) + 100000L;
 
 				outStream.writeObject(nonce);
 				outStream.writeObject(found != null);
+
+
 				if (found == null) {
 					// <userID>:<password>
 					long verifyNonce = (long) inStream.readObject();
@@ -219,21 +226,22 @@ public class TintolmarketServer {
 
 					Signature s = Signature.getInstance("MD5withRSA");
 					s.initVerify(certificate.getPublicKey());
-					System.out.println(s.verify(signedNonce));
+					s.update(ByteBuffer.allocate(Long.BYTES).putLong(nonce).array());
 					if (!s.verify(signedNonce)) {
 						return false;
 					}
-					System.out.println("entrei");
 					// verificar se funciona a autenticacao
-					myWriter.write(user + ":" + certificate.getPublicKey().getEncoded().toString() + "\n");
+					myWriter.write(user + ":"
+							+ Base64.getEncoder().encodeToString(certificate.getPublicKey().getEncoded()) + "\n");
 				} else {
+
 					byte[] recivedNonce = (byte[]) inStream.readObject();
 					Signature s = Signature.getInstance("MD5withRSA");
-					byte[] publicKeyBytes = found[1].getBytes();
-					PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(publicKeyBytes);
-					KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-					PublicKey publicKey = keyFactory.generatePublic(spec);
+					byte[] decodedPublicKey = Base64.getDecoder().decode(found[1]);
+					PublicKey publicKey = KeyFactory.getInstance("RSA")
+							.generatePublic(new X509EncodedKeySpec(decodedPublicKey));
 					s.initVerify(publicKey);
+					s.update(ByteBuffer.allocate(Long.BYTES).putLong(nonce).array());
 					outStream.writeObject(s.verify(recivedNonce));
 				}
 
@@ -257,7 +265,7 @@ public class TintolmarketServer {
 				System.exit(-1);
 			}
 
-			return result;
+			return true;
 		}
 
 		private void receiveCommands(ObjectInputStream inStream, ObjectOutputStream outStream) {

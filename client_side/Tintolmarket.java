@@ -117,38 +117,29 @@ public class Tintolmarket {
     private Boolean login(String userID, Certificate certificate, String keyStore, String pass, String truststore)
             throws KeyStoreException, NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException,
             InvalidKeyException, SignatureException {
-        Boolean isUser = false;
         try {
-
             out.writeObject(userID);
             long nonce = (long) in.readObject();
-            if ((boolean) in.readObject()) { // TODO REMOVE DUPLICATED CODE
+            // sign nonce
+            FileInputStream kfile = new FileInputStream(keyStore); // keystore
+            KeyStore kstore = KeyStore.getInstance("JKS");
+            kstore.load(kfile, pass.toCharArray());
+            String alias = keyStore.substring(keyStore.length() - 8, keyStore.length() - 3).toLowerCase();
+            PrivateKey privateKey = (PrivateKey) kstore.getKey(alias, pass.toCharArray());
+            Signature s = Signature.getInstance("MD5withRSA");
+            s.initSign(privateKey);
+            byte[] bytes = ByteBuffer.allocate(Long.BYTES).putLong(nonce).array();
+            s.update(bytes);
+            //
+            if ((boolean) in.readObject()) {
                 // user login
                 // sign nonce
-                FileInputStream kfile = new FileInputStream(keyStore); // keystore
-                KeyStore kstore = KeyStore.getInstance("JKS");
-                kstore.load(kfile, pass.toCharArray());
-                String alias = keyStore.substring(keyStore.length() - 8, keyStore.length() - 3).toLowerCase();
-                PrivateKey privateKey = (PrivateKey) kstore.getKey(alias, pass.toCharArray());
-                Signature s = Signature.getInstance("MD5withRSA");
-                s.initSign(privateKey);
-                byte[] bytes = ByteBuffer.allocate(Long.BYTES).putLong(nonce).array();
-                s.update(bytes);
                 out.writeObject(s.sign());
-                System.out.println(in.readObject());
+                return (Boolean) in.readObject();
             } else {
+                // user register
                 // recived nonce
                 out.writeObject(nonce);
-                // signed nonce
-                FileInputStream kfile = new FileInputStream(keyStore); // keystore
-                KeyStore kstore = KeyStore.getInstance("JKS");
-                kstore.load(kfile, pass.toCharArray());
-                String alias = keyStore.substring(keyStore.length() - 8, keyStore.length() - 3).toLowerCase();
-                PrivateKey privateKey = (PrivateKey) kstore.getKey(alias, pass.toCharArray());
-                Signature s = Signature.getInstance("MD5withRSA");
-                s.initSign(privateKey);
-                byte[] bytes = ByteBuffer.allocate(Long.BYTES).putLong(nonce).array();
-                s.update(bytes);
                 out.writeObject(s.sign());
                 // certificate
                 FileInputStream tfile = new FileInputStream(truststore); // keystore
@@ -156,15 +147,14 @@ public class Tintolmarket {
                 tstore.load(tfile, pass.toCharArray());
                 out.writeObject(tstore.getCertificate(alias));
 
-                System.out.println(in.readObject());
+                return (Boolean) in.readObject();
             }
 
         } catch (IOException | ClassNotFoundException e) {
             System.err.println(e.getMessage());
             System.exit(-1);
         }
-
-        return isUser;
+        return false;
     }
 
     private void run() {
