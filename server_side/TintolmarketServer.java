@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -22,6 +23,10 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
@@ -188,13 +193,13 @@ public class TintolmarketServer {
 				inStream.close();
 				socket.close();
 			} catch (IOException | ClassNotFoundException | InvalidKeyException | SignatureException
-					| InvalidKeySpecException | NoSuchAlgorithmException e) {
+					| InvalidKeySpecException | NoSuchAlgorithmException | CertificateException e) {
 				e.printStackTrace();
 			}
 		}
 
 		private Boolean authenticate(String user) throws ClassNotFoundException, SignatureException,
-				InvalidKeyException, InvalidKeySpecException, NoSuchAlgorithmException {
+				InvalidKeyException, InvalidKeySpecException, NoSuchAlgorithmException, CertificateException {
 
 			try {
 				FileReader myReader = new FileReader("server_side/clientPass.txt");
@@ -233,16 +238,27 @@ public class TintolmarketServer {
 						return false;
 					}
 					// verificar se funciona a autenticacao
+					String pathUser = "server_side/usersCert/";
+
+					File dir = new File(pathUser);
+					if (!dir.exists())
+						dir.mkdir();
+
+					File fileCert = new File(pathUser + user + ".cert");
+					FileOutputStream writeCert = new FileOutputStream(fileCert);
+					writeCert.write(certificate.getEncoded());
+
 					myWriter.write(user + ":"
-							+ Base64.getEncoder().encodeToString(certificate.getPublicKey().getEncoded()) + "\n");
+							+ fileCert.getAbsolutePath() + "\n");
 				} else {
 
 					byte[] recivedNonce = (byte[]) inStream.readObject();
 					Signature s = Signature.getInstance("MD5withRSA");
-					byte[] decodedPublicKey = Base64.getDecoder().decode(found[1]);
-					PublicKey publicKey = KeyFactory.getInstance("RSA")
-							.generatePublic(new X509EncodedKeySpec(decodedPublicKey));
-					s.initVerify(publicKey);
+					File certFile = new File("server_side/usersCert/" + user + ".cert");
+					FileInputStream fis = new FileInputStream(certFile);
+					CertificateFactory cf = CertificateFactory.getInstance("X.509");
+					Certificate cert = (X509Certificate) cf.generateCertificate(fis);
+					s.initVerify(cert.getPublicKey());
 					s.update(ByteBuffer.allocate(Long.BYTES).putLong(nonce).array());
 					if (!s.verify(recivedNonce)) {
 						return false;

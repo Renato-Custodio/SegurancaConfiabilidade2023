@@ -80,7 +80,7 @@ public class Tintolmarket {
         } else {
             /// se que voltar a pedir a pass
             System.err.println();
-            System.err.println("Erro : password invalida");
+            System.err.println("Erro : autenticacao falhada");
             System.err.println();
             System.exit(-1);
         }
