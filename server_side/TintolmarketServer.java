@@ -56,7 +56,7 @@ public class TintolmarketServer {
 		// a pass de tudo é 123456
 		System.out.println("servidor: main");
 		TintolmarketServer server = new TintolmarketServer();
-		System.err.println("Forma de uso: TintolmarketServer <port> <password-cifra> <keystore> <password-keystore>");
+
 		if (checkArgs(args)) {
 			// assign vars
 			int setArgs = 0;
@@ -74,6 +74,9 @@ public class TintolmarketServer {
 			} else {
 				server.startServer(12345);
 			}
+		} else {
+			System.err
+					.println("Forma de uso: TintolmarketServer <port> <password-cifra> <keystore> <password-keystore>");
 		}
 
 	}
@@ -213,7 +216,6 @@ public class TintolmarketServer {
 				outStream.writeObject(nonce);
 				outStream.writeObject(found != null);
 
-
 				if (found == null) {
 					// <userID>:<password>
 					long verifyNonce = (long) inStream.readObject();
@@ -242,7 +244,9 @@ public class TintolmarketServer {
 							.generatePublic(new X509EncodedKeySpec(decodedPublicKey));
 					s.initVerify(publicKey);
 					s.update(ByteBuffer.allocate(Long.BYTES).putLong(nonce).array());
-					outStream.writeObject(s.verify(recivedNonce));
+					if (!s.verify(recivedNonce)) {
+						return false;
+					}
 				}
 
 				if (!userList.contains(new User(user))) {
@@ -287,16 +291,16 @@ public class TintolmarketServer {
 					switch (command) {
 						case "a":
 						case "add":
-							wineName = inStream.readObject().toString();
+							wineName = (String) inStream.readObject();
 							image = (byte[]) inStream.readObject();
 
 							if (wineList.contains(new Wine(wineName))) {
-								outStream.writeObject("Vinho Já Existe.");
+								outStream.writeObject(false);
 								break;
 							}
 							// backup dentro do add
 							add(wineName, image, (String) inStream.readObject());
-							outStream.writeObject("Vinho adicionado com sucesso.");
+							outStream.writeObject(true);
 
 							break;
 						case "s":
@@ -317,7 +321,7 @@ public class TintolmarketServer {
 									break;
 								}
 							}
-
+							System.out.println(currentUser);
 							WineSell tWineSell = currentUser.getWine(wineName);
 							if (tWineSell != null) {
 								tWineSell.setQuantity(quantity);
@@ -343,11 +347,10 @@ public class TintolmarketServer {
 							break;
 						case "v":
 						case "view":
-							wineName = inStream.readObject().toString();
-							StringBuilder sb = new StringBuilder("Informaçoes para o vinho " + wineName + ":\n");
+							wineName = (String) inStream.readObject();
 							outStream.writeObject(wineList.contains(new Wine(wineName)));
 							if (wineList.contains(new Wine(wineName))) {
-
+								StringBuilder sb = new StringBuilder("Informaçoes para o vinho " + wineName + ":\n");
 								// envio da imagem
 
 								File f = null;

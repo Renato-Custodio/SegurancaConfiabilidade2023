@@ -8,11 +8,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.security.InvalidKeyException;
-import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -176,7 +174,12 @@ public class Tintolmarket {
                             out.writeObject(content);
                             out.writeObject(command[2].split("\\.")[1]);
                             // resposta do server
-                            System.out.println(in.readObject());
+                            if ((boolean) in.readObject()) {
+                                System.out.println("vinho adicionado com sucesso");
+                            } else {
+                                System.out.println("ocorreu um erro");
+                            }
+
                         } else {
                             System.out.println("A imagem nao existe");
                         }
