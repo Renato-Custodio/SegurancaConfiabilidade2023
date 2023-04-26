@@ -9,36 +9,36 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.KeyFactory;
-import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.RSAPublicKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 
+import javax.crypto.Cipher;
+import javax.crypto.CipherInputStream;
+import javax.crypto.CipherOutputStream;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 import javax.imageio.ImageIO;
 
 import javax.net.ServerSocketFactory;
@@ -57,7 +57,8 @@ public class TintolmarketServer {
 	FileWriter writeUser;
 	String passCifra;
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InvalidKeyException, NumberFormatException, NoSuchAlgorithmException,
+			InvalidKeySpecException, NoSuchPaddingException {
 		// a pass de tudo é 123456
 		System.out.println("servidor: main");
 		TintolmarketServer server = new TintolmarketServer();
@@ -97,14 +98,13 @@ public class TintolmarketServer {
 		return args.length >= 3 && f.exists();
 	}
 
-	public void startServer(int port) {
+	public void startServer(int port)
+			throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException {
 
 		SSLServerSocket sSoc = null;
 
 		// getbackups
 		try {
-			File f = new File("server_side/clientPass.txt");
-			f.createNewFile();
 
 			// ficheiro para guardar informacao
 
@@ -193,15 +193,101 @@ public class TintolmarketServer {
 				inStream.close();
 				socket.close();
 			} catch (IOException | ClassNotFoundException | InvalidKeyException | SignatureException
-					| InvalidKeySpecException | NoSuchAlgorithmException | CertificateException e) {
+					| InvalidKeySpecException | NoSuchAlgorithmException | CertificateException
+					| NoSuchPaddingException | InvalidAlgorithmParameterException e) {
 				e.printStackTrace();
 			}
 		}
 
+		private void encrypt() throws IOException, NoSuchAlgorithmException, NoSuchPaddingException,
+				InvalidKeySpecException, InvalidKeyException {
+
+			File f = new File("server_side/clientPass.txt");
+			f.createNewFile();
+			// encrypt file
+			// genrateKey
+			byte[] salt = { (byte) 0xc9, (byte) 0x36, (byte) 0x78, (byte) 0x99, (byte) 0x52, (byte) 0x3e,
+					(byte) 0xea,
+					(byte) 0xf2 };
+			PBEKeySpec keySpec = new PBEKeySpec(passCifra.toCharArray(), salt, 20); // pass, salt, iterations
+			SecretKeyFactory kf = SecretKeyFactory.getInstance("PBEWithHmacSHA256AndAES_128");
+			SecretKey key = kf.generateSecret(keySpec);
+			// encrypt
+
+			Cipher c = Cipher.getInstance("PBEWithHmacSHA256AndAES_128");
+			c.init(Cipher.ENCRYPT_MODE, key);
+
+			FileInputStream fis = new FileInputStream("server_side/clientPass.txt");
+			FileOutputStream fos = new FileOutputStream("server_side/clientPass.cif");
+			CipherOutputStream cos = new CipherOutputStream(fos, c);
+
+			byte[] b = new byte[16];
+			int i = fis.read(b);
+			while (i != -1) {
+				cos.write(b, 0, i);
+				i = fis.read(b);
+			}
+			byte[] keyEncoded = key.getEncoded();
+			FileOutputStream kos = new FileOutputStream("server_side/clientPass.key");
+			ObjectOutputStream oos = new ObjectOutputStream(kos);
+			oos.writeObject(keyEncoded);
+			kos = new FileOutputStream("server_side/params.bin");
+			oos = new ObjectOutputStream(kos);
+			oos.writeObject(c.getParameters().getEncoded());
+
+			oos.close();
+			kos.close();
+			fis.close();
+			cos.close();
+			Files.delete(f.toPath());
+		}
+
+		private void decrypt() throws IOException, ClassNotFoundException, NoSuchAlgorithmException,
+				NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
+
+			File file1 = new File("server_side/clientPass.key");
+			File file2 = new File("server_side/clientPass.cif");
+			if (!file1.exists() || !file2.exists()) {
+				File f = new File("server_side/clientPass.txt");
+				f.createNewFile();
+				return;
+			}
+			FileInputStream kos = new FileInputStream("server_side/clientPass.key");
+			ObjectInputStream oos = new ObjectInputStream(kos);
+			byte[] keyEncoded2 = (byte[]) oos.readObject();
+			oos.close();
+			kos.close();
+
+			SecretKeySpec keySpec2 = new SecretKeySpec(keyEncoded2, "PBEWithHmacSHA256AndAES_128");
+
+			AlgorithmParameters p = AlgorithmParameters.getInstance("PBEWithHmacSHA256AndAES_128");
+			FileInputStream in = new FileInputStream("server_side/params.bin");
+			ObjectInputStream oin = new ObjectInputStream(in);
+			byte[] param = (byte[]) oin.readObject();
+			p.init(param);
+			Cipher c = Cipher.getInstance("PBEWithHmacSHA256AndAES_128");
+			c.init(Cipher.DECRYPT_MODE, keySpec2, p);
+			FileOutputStream fis = new FileOutputStream("server_side/clientPass.txt");
+			FileInputStream fos = new FileInputStream("server_side/clientPass.cif");
+			CipherInputStream cos = new CipherInputStream(fos, c);
+
+			byte[] b = new byte[16];
+			int i = cos.read(b);
+			while (i != -1) {
+				fis.write(b, 0, i);
+				i = cos.read(b);
+			}
+			cos.close();
+			fis.close();
+			fos.close();
+		}
+
 		private Boolean authenticate(String user) throws ClassNotFoundException, SignatureException,
-				InvalidKeyException, InvalidKeySpecException, NoSuchAlgorithmException, CertificateException {
+				InvalidKeyException, InvalidKeySpecException, NoSuchAlgorithmException, CertificateException,
+				NoSuchPaddingException, InvalidAlgorithmParameterException {
 
 			try {
+				decrypt();
 				FileReader myReader = new FileReader("server_side/clientPass.txt");
 				BufferedReader br = new BufferedReader(myReader);
 				FileWriter myWriter = new FileWriter("server_side/clientPass.txt", true);
@@ -228,6 +314,10 @@ public class TintolmarketServer {
 					Certificate certificate = (Certificate) inStream.readObject();
 
 					if (verifyNonce != nonce) {
+						br.close();
+						myReader.close();
+						myWriter.close();
+						encrypt();
 						return false;
 					}
 
@@ -235,6 +325,10 @@ public class TintolmarketServer {
 					s.initVerify(certificate.getPublicKey());
 					s.update(ByteBuffer.allocate(Long.BYTES).putLong(nonce).array());
 					if (!s.verify(signedNonce)) {
+						br.close();
+						myReader.close();
+						myWriter.close();
+						encrypt();
 						return false;
 					}
 					// verificar se funciona a autenticacao
@@ -247,9 +341,12 @@ public class TintolmarketServer {
 					File fileCert = new File(pathUser + user + ".cert");
 					FileOutputStream writeCert = new FileOutputStream(fileCert);
 					writeCert.write(certificate.getEncoded());
-
 					myWriter.write(user + ":"
 							+ fileCert.getAbsolutePath() + "\n");
+					br.close();
+					myReader.close();
+					myWriter.close();
+					encrypt();
 				} else {
 
 					byte[] recivedNonce = (byte[]) inStream.readObject();
@@ -261,8 +358,16 @@ public class TintolmarketServer {
 					s.initVerify(cert.getPublicKey());
 					s.update(ByteBuffer.allocate(Long.BYTES).putLong(nonce).array());
 					if (!s.verify(recivedNonce)) {
+						br.close();
+						myReader.close();
+						myWriter.close();
+						encrypt();
 						return false;
 					}
+					br.close();
+					myReader.close();
+					myWriter.close();
+					encrypt();
 				}
 
 				if (!userList.contains(new User(user))) {
