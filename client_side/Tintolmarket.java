@@ -39,6 +39,7 @@ public class Tintolmarket {
     private ObjectInputStream in;
     private String keyStore;
     private String pass;
+    private String userID;
 
     public static void main(String[] args) throws FileNotFoundException, KeyStoreException, UnrecoverableKeyException,
             NoSuchAlgorithmException, CertificateException, InvalidKeyException, SignatureException,
@@ -56,9 +57,8 @@ public class Tintolmarket {
         String serverAddress = args[0];
         String truststore = args[1];
 
-        String userID = args[4];
-
         Tintolmarket client = new Tintolmarket();
+        client.userID = args[4];
         client.keyStore = args[2];
         client.pass = args[3];
         // set Propreties
@@ -86,7 +86,7 @@ public class Tintolmarket {
                 .getCertificate(client.keyStore.substring(client.keyStore.length() - 8, client.keyStore.length() - 3)
                         .toLowerCase());
 
-        if (client.login(userID, certificate, client.keyStore, client.pass, truststore)) {
+        if (client.login(client.userID, certificate, client.keyStore, client.pass, truststore)) {
             printCommands();
         } else {
             /// se que voltar a pedir a pass
@@ -168,7 +168,8 @@ public class Tintolmarket {
 
     private void run()
             throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, UnrecoverableKeyException,
-            KeyStoreException, CertificateException, IllegalBlockSizeException, BadPaddingException {
+            KeyStoreException, CertificateException, IllegalBlockSizeException, BadPaddingException,
+            SignatureException {
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print("Comando: ");
@@ -205,6 +206,22 @@ public class Tintolmarket {
                             out.writeObject(command[1]);
                             out.writeObject(Double.parseDouble(command[2]));
                             out.writeObject(Integer.parseInt(command[3]));
+
+                            // signature for log
+                            String log = command[1] + "," + Double.parseDouble(command[2]) + "," + command[3] + ","
+                                    + this.userID;
+                            FileInputStream kfile = new FileInputStream(keyStore); // keystore
+                            KeyStore kstore = KeyStore.getInstance("JKS");
+                            kstore.load(kfile, pass.toCharArray());
+                            String alias = keyStore.substring(keyStore.length() - 8, keyStore.length() - 3)
+                                    .toLowerCase();
+                            PrivateKey privateKey = (PrivateKey) kstore.getKey(alias, pass.toCharArray());
+                            Signature s = Signature.getInstance("MD5withRSA");
+                            s.initSign(privateKey);
+                            byte[] bytes = log.getBytes();
+                            s.update(bytes);
+                            out.writeObject(s.sign());
+
                             // resposta do server
                             System.out.println(in.readObject());
                             break;
@@ -247,9 +264,23 @@ public class Tintolmarket {
                         if (command.length >= 4 && isNumeric(command[3])) {
                             // pedido ao server
                             out.writeObject(command[0]);
-                            out.writeObject(command[1]);
-                            out.writeObject(command[2]);
-                            out.writeObject(Integer.parseInt(command[3]));
+                            out.writeObject(command[1]); // wine
+                            out.writeObject(command[2]); // seller
+                            out.writeObject(Integer.parseInt(command[3])); // quantity
+
+                            // signature for log
+                            String log = command[1] + "," + command[3] + "," + in.readObject() + "," + this.userID;
+                            FileInputStream kfile = new FileInputStream(keyStore); // keystore
+                            KeyStore kstore = KeyStore.getInstance("JKS");
+                            kstore.load(kfile, pass.toCharArray());
+                            String alias = keyStore.substring(keyStore.length() - 8, keyStore.length() - 3)
+                                    .toLowerCase();
+                            PrivateKey privateKey = (PrivateKey) kstore.getKey(alias, pass.toCharArray());
+                            Signature s = Signature.getInstance("MD5withRSA");
+                            s.initSign(privateKey);
+                            byte[] bytes = log.getBytes();
+                            s.update(bytes);
+                            out.writeObject(s.sign());
                             // resposta do server
                             System.out.println(in.readObject());
                         } else {

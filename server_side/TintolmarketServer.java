@@ -11,7 +11,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.RandomAccessFile;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -26,7 +25,6 @@ import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -254,7 +252,8 @@ public class TintolmarketServer {
 
 			File file1 = new File("server_side/clientPass.key");
 			File file2 = new File("server_side/clientPass.cif");
-			if (!file1.exists() || !file2.exists()) {
+			File file3 = new File("server_side/params.bin");
+			if (!file1.exists() || !file2.exists() || !file3.exists()) {
 				File f = new File("server_side/clientPass.txt");
 				f.createNewFile();
 				return;
@@ -315,7 +314,7 @@ public class TintolmarketServer {
 				outStream.writeObject(found != null);
 
 				if (found == null) {
-					// <userID>:<password>
+					// <userID>:<path to cert>
 					long verifyNonce = (long) inStream.readObject();
 					byte[] signedNonce = (byte[]) inStream.readObject();
 					Certificate certificate = (Certificate) inStream.readObject();
@@ -360,7 +359,7 @@ public class TintolmarketServer {
 					File certFile = new File(found[1] + ":" + found[2]);
 					FileInputStream fis = new FileInputStream(certFile);
 					CertificateFactory cf = CertificateFactory.getInstance("X.509");
-					Certificate cert = (X509Certificate) cf.generateCertificate(fis);
+					Certificate cert = cf.generateCertificate(fis);
 					s.initVerify(cert.getPublicKey());
 					s.update(ByteBuffer.allocate(Long.BYTES).putLong(nonce).array());
 					if (!s.verify(recivedNonce)) {
@@ -402,7 +401,7 @@ public class TintolmarketServer {
 		private void receiveCommands(ObjectInputStream inStream, ObjectOutputStream outStream)
 				throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException,
 				InvalidAlgorithmParameterException, CertificateException, IllegalBlockSizeException,
-				BadPaddingException, InvalidKeySpecException {
+				BadPaddingException, InvalidKeySpecException, SignatureException {
 			List<String> lines;
 			File fUser = new File("server_side/backups/userList.txt");
 			while (true) {
@@ -417,6 +416,12 @@ public class TintolmarketServer {
 					Integer quantity = null;
 					Integer stars = null;
 					String message = null;
+					FileInputStream fis = null;
+					File certFile = null;
+					CertificateFactory cf = null;
+					Certificate cert = null;
+					Signature s = null;
+					String log = null;
 
 					switch (command) {
 						case "a":
@@ -438,9 +443,23 @@ public class TintolmarketServer {
 							wineName = (String) inStream.readObject();
 							value = (Double) inStream.readObject();
 							quantity = (int) inStream.readObject();
-
+							byte[] signature = (byte[]) inStream.readObject();
 							if (!wineList.contains(new Wine(wineName))) {
 								outStream.writeObject("O vinho ainda nao foi adicionado");
+								break;
+							}
+							// verificao da assinatura
+							log = wineName + "," + value + "," + quantity + "," + currentUser.getName();
+
+							s = Signature.getInstance("MD5withRSA");
+							certFile = new File("server_side/usersCert/" + currentUser.getName() + ".cert");
+							fis = new FileInputStream(certFile);
+							cf = CertificateFactory.getInstance("X.509");
+							cert = cf.generateCertificate(fis);
+							s.initVerify(cert.getPublicKey());
+							s.update(log.getBytes());
+							if (!s.verify(signature)) {
+								outStream.writeObject("A assinatura nao e valida");
 								break;
 							}
 
@@ -451,7 +470,6 @@ public class TintolmarketServer {
 									break;
 								}
 							}
-							System.out.println(currentUser);
 							WineSell tWineSell = currentUser.getWine(wineName);
 							if (tWineSell != null) {
 								tWineSell.setQuantity(quantity);
@@ -462,6 +480,8 @@ public class TintolmarketServer {
 
 							outStream.writeObject(
 									quantity + " unidades de vinho " + wineName + " posto à venda a " + value + ".");
+							// registo no log
+
 							// backup
 							lines = Files.readAllLines(fUser.toPath());
 							for (String tempString : lines) {
@@ -521,48 +541,70 @@ public class TintolmarketServer {
 							wineName = (String) inStream.readObject();
 							user = (String) inStream.readObject();
 							quantity = (Integer) inStream.readObject();
+
+							// verificao da assinatura
+
+							s = Signature.getInstance("MD5withRSA");
+							certFile = new File("server_side/usersCert/" + currentUser.getName() + ".cert");
+							fis = new FileInputStream(certFile);
+							cf = CertificateFactory.getInstance("X.509");
+							cert = cf.generateCertificate(fis);
+							s.initVerify(cert.getPublicKey());
+							// verifica se a assinatura é valida
+
 							// verifica se o vendedor existe
 							if (userList.contains(new User(user))) {
 								User seller = userList.get(userList.indexOf(new User(user)));
 								WineSell sellWine = seller.getWine(wineName);
-								// verifica se o vinho existe
-								if (sellWine != null) {
-									// verifica se o comprador tem saldo suficiente para efetuar a compra
-									if (currentUser.getBalance() >= sellWine.getValue() * quantity) {
-										// verifica se o vendedor tem as unidades requisitadas pelo cliente
-										if (sellWine.getQuantity() >= quantity) {
-											// comprador
-											currentUser.setBalance(
-													currentUser.getBalance() - sellWine.getValue() * quantity);
+								outStream.writeObject(sellWine.getValue());
+								byte[] sign = (byte[]) inStream.readObject();
+								log = wineName + "," + quantity + "," + sellWine.getValue() + ","
+										+ currentUser.getName();
+								s.update(log.getBytes());
+								if (s.verify(sign)) {
+									// verifica se o vinho existe
+									if (sellWine != null) {
+										// verifica se o comprador tem saldo suficiente para efetuar a compra
+										if (currentUser.getBalance() >= sellWine.getValue() * quantity) {
+											// verifica se o vendedor tem as unidades requisitadas pelo cliente
+											if (sellWine.getQuantity() >= quantity) {
+												// comprador
+												currentUser.setBalance(
+														currentUser.getBalance() - sellWine.getValue() * quantity);
 
-											// vendedor
-											seller.setBalance(seller.getBalance() + sellWine.getValue() * quantity);
-											sellWine.setQuantity(sellWine.getQuantity() - quantity);
+												// vendedor
+												seller.setBalance(seller.getBalance() + sellWine.getValue() * quantity);
+												sellWine.setQuantity(sellWine.getQuantity() - quantity);
 
-											outStream.writeObject("Compra efetuada com sucesso");
+												outStream.writeObject("Compra efetuada com sucesso");
+												// registo no log
 
-											// backup
-											lines = Files.readAllLines(fUser.toPath());
-											for (Iterator<String> iterator = lines.iterator(); iterator.hasNext();) {
-												String tempString = iterator.next();
-												if (tempString.split("&")[0].equals(currentUser.getName()) ||
-														tempString.split("&")[0].equals(seller.getName())) {
-													iterator.remove();
+												// backup
+												lines = Files.readAllLines(fUser.toPath());
+												for (Iterator<String> iterator = lines.iterator(); iterator
+														.hasNext();) {
+													String tempString = iterator.next();
+													if (tempString.split("&")[0].equals(currentUser.getName()) ||
+															tempString.split("&")[0].equals(seller.getName())) {
+														iterator.remove();
+													}
 												}
-											}
 
-											lines.add(seller.serialize());
-											lines.add(currentUser.serialize());
-											Files.write(fUser.toPath(), lines);
+												lines.add(seller.serialize());
+												lines.add(currentUser.serialize());
+												Files.write(fUser.toPath(), lines);
+											} else {
+												outStream.writeObject(
+														"A quantidade de unidades requisitadas é superior ao stock disponível");
+											}
 										} else {
-											outStream.writeObject(
-													"A quantidade de unidades requisitadas é superior ao stock disponível");
+											outStream.writeObject("Saldo insuficiente");
 										}
 									} else {
-										outStream.writeObject("Saldo insuficiente");
+										outStream.writeObject("O vinho nao existe");
 									}
 								} else {
-									outStream.writeObject("O vinho nao existe");
+									outStream.writeObject("A assinatura nao e valida");
 								}
 							} else {
 								outStream.writeObject("O vendedor nao existe");
@@ -615,14 +657,12 @@ public class TintolmarketServer {
 							List<String> sc = Files.readAllLines(Paths.get("server_side/clientpass.txt"));
 							encrypt();
 							PublicKey key = null;
-							FileInputStream fis = null;
-							File certFile;
 							for (String string : sc) {
 								if (string.split(":")[0].equals(user)) {
 									certFile = new File(string.split(":")[1] + ":" + string.split(":")[2]);
 									fis = new FileInputStream(certFile);
-									CertificateFactory cf = CertificateFactory.getInstance("X.509");
-									Certificate cert = cf.generateCertificate(fis);
+									cf = CertificateFactory.getInstance("X.509");
+									cert = cf.generateCertificate(fis);
 									key = cert.getPublicKey();
 									fis.close();
 									break;
@@ -633,7 +673,7 @@ public class TintolmarketServer {
 							Cipher c = Cipher.getInstance("RSA");
 							c.init(Cipher.ENCRYPT_MODE, key);
 							byte[] enc = c.doFinal(message.getBytes());
-							//to string para ser mais facil de escrever no backup
+							// to string para ser mais facil de escrever no backup
 							String encoded = Arrays.toString(enc);
 							tempUser.receiveMessage(currentUser.getName(), encoded);
 							outStream.writeObject("Mensagem enviada");
@@ -678,17 +718,6 @@ public class TintolmarketServer {
 			}
 		}
 
-		private byte[] parseByteArrayFromString(String byteArrayString) {
-			String[] elements = byteArrayString.substring(1, byteArrayString.length() - 1).split(", ");
-
-			byte[] byteArray = new byte[elements.length];
-			for (int i = 0; i < elements.length; i++) {
-				byteArray[i] = Byte.parseByte(elements[i]);
-			}
-
-			return byteArray;
-		}
-
 		private void add(String wine, byte[] image, String extensao) throws IOException {
 			BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(image));
 			String pathUser = "server_side/wineImages/";
@@ -705,6 +734,20 @@ public class TintolmarketServer {
 			writeWine.append(tempWine.serialize() + "\n");
 			writeWine.flush();
 			wineList.add(tempWine);
+		}
+
+		private void registerTransaction() throws IOException {
+			File dir = new File("server_side/log");
+			if (!dir.exists())
+				dir.mkdir();
+
+			File[] files = dir.listFiles();
+
+			
+
+			File file = new File("server_side/log/block_" + ".blk");
+			file.createNewFile();
+
 		}
 	}
 }
