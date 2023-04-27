@@ -11,13 +11,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.RandomAccessFile;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
@@ -26,14 +29,17 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
 import javax.crypto.CipherOutputStream;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -194,7 +200,8 @@ public class TintolmarketServer {
 				socket.close();
 			} catch (IOException | ClassNotFoundException | InvalidKeyException | SignatureException
 					| InvalidKeySpecException | NoSuchAlgorithmException | CertificateException
-					| NoSuchPaddingException | InvalidAlgorithmParameterException e) {
+					| NoSuchPaddingException | InvalidAlgorithmParameterException | IllegalBlockSizeException
+					| BadPaddingException e) {
 				e.printStackTrace();
 			}
 		}
@@ -348,10 +355,9 @@ public class TintolmarketServer {
 					myWriter.close();
 					encrypt();
 				} else {
-
 					byte[] recivedNonce = (byte[]) inStream.readObject();
 					Signature s = Signature.getInstance("MD5withRSA");
-					File certFile = new File("server_side/usersCert/" + user + ".cert");
+					File certFile = new File(found[1] + ":" + found[2]);
 					FileInputStream fis = new FileInputStream(certFile);
 					CertificateFactory cf = CertificateFactory.getInstance("X.509");
 					Certificate cert = (X509Certificate) cf.generateCertificate(fis);
@@ -393,7 +399,10 @@ public class TintolmarketServer {
 			return true;
 		}
 
-		private void receiveCommands(ObjectInputStream inStream, ObjectOutputStream outStream) {
+		private void receiveCommands(ObjectInputStream inStream, ObjectOutputStream outStream)
+				throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException,
+				InvalidAlgorithmParameterException, CertificateException, IllegalBlockSizeException,
+				BadPaddingException, InvalidKeySpecException {
 			List<String> lines;
 			File fUser = new File("server_side/backups/userList.txt");
 			while (true) {
@@ -601,9 +610,34 @@ public class TintolmarketServer {
 								outStream.writeObject("O utilizador nao esta no sistema");
 								break;
 							}
+
+							decrypt();
+							List<String> sc = Files.readAllLines(Paths.get("server_side/clientpass.txt"));
+							encrypt();
+							PublicKey key = null;
+							FileInputStream fis = null;
+							File certFile;
+							for (String string : sc) {
+								if (string.split(":")[0].equals(user)) {
+									certFile = new File(string.split(":")[1] + ":" + string.split(":")[2]);
+									fis = new FileInputStream(certFile);
+									CertificateFactory cf = CertificateFactory.getInstance("X.509");
+									Certificate cert = cf.generateCertificate(fis);
+									key = cert.getPublicKey();
+									fis.close();
+									break;
+								}
+							}
+
 							User tempUser = userList.get(userList.indexOf(new User(user)));
-							tempUser.receiveMessage(currentUser.getName(), message);
-							outStream.writeObject("Mensagem envida");
+							Cipher c = Cipher.getInstance("RSA");
+							c.init(Cipher.ENCRYPT_MODE, key);
+							byte[] enc = c.doFinal(message.getBytes());
+							//to string para ser mais facil de escrever no backup
+							String encoded = Arrays.toString(enc);
+							tempUser.receiveMessage(currentUser.getName(), encoded);
+							outStream.writeObject("Mensagem enviada");
+
 							// backup
 							lines = Files.readAllLines(fUser.toPath());
 
@@ -616,7 +650,6 @@ public class TintolmarketServer {
 							}
 							lines.add(tempUser.serialize());
 							Files.write(fUser.toPath(), lines);
-
 							break;
 						case "r":
 						case "read":
@@ -643,6 +676,17 @@ public class TintolmarketServer {
 					// server continua a correr sem problemas
 				}
 			}
+		}
+
+		private byte[] parseByteArrayFromString(String byteArrayString) {
+			String[] elements = byteArrayString.substring(1, byteArrayString.length() - 1).split(", ");
+
+			byte[] byteArray = new byte[elements.length];
+			for (int i = 0; i < elements.length; i++) {
+				byteArray[i] = Byte.parseByte(elements[i]);
+			}
+
+			return byteArray;
 		}
 
 		private void add(String wine, byte[] image, String extensao) throws IOException {

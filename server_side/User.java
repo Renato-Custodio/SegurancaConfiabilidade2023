@@ -65,20 +65,10 @@ public class User {
         this.amount = amount;
     }
 
-    public String readMessages() {
-        if (messages.isEmpty()) {
-            return "Nao tem novas mensagens";
-        }
-        StringBuilder sb = new StringBuilder();
-        sb.append("Caixa de entrada:\n");
-        for (Map.Entry<String, List<String>> entry : messages.entrySet()) {
-            sb.append("\t" + entry.getKey() + ":\n");
-            for (String message : entry.getValue()) {
-                sb.append("\t\t" + message + "\n");
-            }
-        }
+    public Map<String, List<String>> readMessages() {
+        Map<String, List<String>> temp = new HashMap<>(messages);
         messages.clear();
-        return sb.toString();
+        return temp;
     }
 
     public void receiveMessage(String name, String message) {
@@ -133,10 +123,15 @@ public class User {
         while (it.hasNext()) {
             Map.Entry entry = (Map.Entry) it.next();
             message.append(entry.getKey() + "%");
+            List<String> messageList = (List<String>) entry.getValue();
+            for (String string : messageList) {
+                message.append(string);
+                if (messageList.indexOf(string) < messageList.size() - 1) {
+                    message.append("!");
+                }
+            }
             if (it.hasNext()) {
-                message.append(entry.getValue().toString() + "\\");
-            } else {
-                message.append(entry.getValue().toString());
+                message.append("\\");
             }
         }
         return message.toString();
@@ -170,17 +165,16 @@ public class User {
 
     private static Map<String, List<String>> deserializeMessages(String string) {
         Map<String, List<String>> msg = new HashMap<>();
-        if (string.contains("\\")) {
-            for (String temp : string.split("\\\\")) {
-                String message = temp.split("%")[1];
-                msg.put(temp.split("%")[0],
-                        new LinkedList<>(Arrays.asList(message.substring(1, message.length() - 1).split(" *, *"))));
+
+        for (String temp : string.split("\\\\")) {
+            String message = temp.split("%")[1];
+            List<String> list = new LinkedList<>();
+            for (String string2 : message.split("!")) {
+                list.add(string2);
             }
-        } else {
-            String message = string.split("%")[1];
-            msg.put(string.split("%")[0],
-                    new LinkedList<>(Arrays.asList(message.substring(1, message.length() - 1).split(" *, *"))));
+            msg.put(temp.split("%")[0], list);
         }
+
         return msg;
     }
 }

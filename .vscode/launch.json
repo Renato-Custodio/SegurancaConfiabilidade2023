@@ -6,6 +6,20 @@
   "configurations": [
     {
       "type": "java",
+      "name": "teste",
+      "request": "launch",
+      "mainClass": "teste",
+      "projectName": "SegurancaConfiabilidade2023_Proj1_c6f68f9c"
+    },
+    {
+      "type": "java",
+      "name": "test",
+      "request": "launch",
+      "mainClass": "test",
+      "projectName": "SegurancaConfiabilidade2023_Proj1_c6f68f9c"
+    },
+    {
+      "type": "java",
       "name": "Test",
       "request": "launch",
       "mainClass": "Test",
@@ -26,7 +40,7 @@
       "args": [
         "127.0.0.1",
         "TrustStore",
-        "client_side/User1/User1Key",
+        "client_side/User2/User2Key",
         "123456",
         "2"
       ]

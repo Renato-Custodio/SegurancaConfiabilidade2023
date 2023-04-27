@@ -20,8 +20,14 @@ import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.imageio.ImageIO;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocket;
@@ -31,9 +37,12 @@ public class Tintolmarket {
     private SSLSocket clientSocket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
+    private String keyStore;
+    private String pass;
 
     public static void main(String[] args) throws FileNotFoundException, KeyStoreException, UnrecoverableKeyException,
-            NoSuchAlgorithmException, CertificateException, InvalidKeyException, SignatureException {
+            NoSuchAlgorithmException, CertificateException, InvalidKeyException, SignatureException,
+            NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
 
         if (args.length < 5) {
             System.err.println();
@@ -46,11 +55,12 @@ public class Tintolmarket {
         // distribute args
         String serverAddress = args[0];
         String truststore = args[1];
-        String keyStore = args[2];
-        String pass = args[3];
+
         String userID = args[4];
 
         Tintolmarket client = new Tintolmarket();
+        client.keyStore = args[2];
+        client.pass = args[3];
         // set Propreties
         System.setProperty("javax.net.ssl.trustStore", args[1]);
         System.setProperty("javax.net.ssl.trustStorePassword", args[3]);
@@ -73,9 +83,10 @@ public class Tintolmarket {
         }
 
         Certificate certificate = kstore
-                .getCertificate(keyStore.substring(keyStore.length() - 8, keyStore.length() - 3).toLowerCase());
+                .getCertificate(client.keyStore.substring(client.keyStore.length() - 8, client.keyStore.length() - 3)
+                        .toLowerCase());
 
-        if (client.login(userID, certificate, keyStore, pass, truststore)) {
+        if (client.login(userID, certificate, client.keyStore, client.pass, truststore)) {
             printCommands();
         } else {
             /// se que voltar a pedir a pass
@@ -155,7 +166,9 @@ public class Tintolmarket {
         return false;
     }
 
-    private void run() {
+    private void run()
+            throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, UnrecoverableKeyException,
+            KeyStoreException, CertificateException, IllegalBlockSizeException, BadPaddingException {
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print("Comando: ");
@@ -269,7 +282,6 @@ public class Tintolmarket {
                         // pedido ao server
                         if (command.length >= 3) {
                             if (command[2].replace(",", "").length() > 0) {
-                                System.out.println("entrei");
                                 out.writeObject(command[0]);
                                 out.writeObject(command[1]);
                                 out.writeObject(command[2].replace(",", ""));
@@ -287,7 +299,30 @@ public class Tintolmarket {
                         // pedido ao server
                         out.writeObject(command[0]);
                         // resposta do server
-                        System.out.println(in.readObject());
+                        Map<String, List<String>> messages = (Map<String, List<String>>) in.readObject();
+                        if (messages.isEmpty()) {
+                            System.out.println("Nao tem novas mensagens");
+                        } else {
+                            FileInputStream kfile = new FileInputStream(this.keyStore); // keystore
+                            KeyStore kstore = KeyStore.getInstance("JKS");
+                            kstore.load(kfile, this.pass.toCharArray());
+                            String alias = keyStore.substring(keyStore.length() - 8, keyStore.length() - 3)
+                                    .toLowerCase();
+                            PrivateKey privateKey = (PrivateKey) kstore.getKey(alias, this.pass.toCharArray());
+                            StringBuilder sb = new StringBuilder();
+                            sb.append("Caixa de entrada:\n");
+
+                            Cipher c = Cipher.getInstance("RSA");
+                            c.init(Cipher.DECRYPT_MODE, privateKey);
+
+                            for (Map.Entry<String, List<String>> entry : messages.entrySet()) {
+                                sb.append("\t" + entry.getKey() + ":\n");
+                                for (String message : entry.getValue()) {
+                                    sb.append("\t\t" + new String(c.doFinal(parseByteArrayFromString(message))) + "\n");
+                                }
+                            }
+                            System.out.println(sb.toString());
+                        }
                         break;
                     case "q":
                     case "quit":
@@ -306,6 +341,17 @@ public class Tintolmarket {
             }
             printCommands();
         }
+    }
+
+    private byte[] parseByteArrayFromString(String byteArrayString) {
+        String[] elements = byteArrayString.substring(1, byteArrayString.length() - 1).split(", ");
+
+        byte[] byteArray = new byte[elements.length];
+        for (int i = 0; i < elements.length; i++) {
+            byteArray[i] = Byte.parseByte(elements[i]);
+        }
+
+        return byteArray;
     }
 
     private static void printCommands() {
