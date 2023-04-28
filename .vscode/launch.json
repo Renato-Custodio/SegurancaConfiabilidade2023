@@ -40,9 +40,9 @@
       "args": [
         "127.0.0.1",
         "TrustStore",
-        "client_side/User1/User1Key",
+        "client_side/User2/User2Key",
         "123456",
-        "1"
+        "2"
       ]
     },
     {

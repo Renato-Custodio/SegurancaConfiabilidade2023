@@ -36,8 +36,10 @@ import java.security.cert.CertificateFactory;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -46,6 +48,7 @@ import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
 import javax.crypto.CipherOutputStream;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -71,9 +74,12 @@ public class TintolmarketServer {
 	private String keyStore;
 	private String passKeyStore;
 
+	File fileUser = new File("server_side/backups/userList.txt");
+	File fileWine = new File("server_side/backups/wineList.txt");
+
 	public static void main(String[] args) throws InvalidKeyException, NumberFormatException, NoSuchAlgorithmException,
 			InvalidKeySpecException, NoSuchPaddingException, ClassNotFoundException, SignatureException,
-			CertificateException {
+			CertificateException, UnrecoverableKeyException, IllegalStateException, KeyStoreException {
 		// a pass de tudo é 123456
 		System.out.println("servidor: main");
 		TintolmarketServer server = new TintolmarketServer();
@@ -196,7 +202,8 @@ public class TintolmarketServer {
 
 	public void startServer(int port)
 			throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException,
-			ClassNotFoundException, SignatureException, CertificateException {
+			ClassNotFoundException, SignatureException, CertificateException, UnrecoverableKeyException,
+			IllegalStateException, KeyStoreException {
 
 		SSLServerSocket sSoc = null;
 
@@ -209,9 +216,15 @@ public class TintolmarketServer {
 			if (!dir.exists())
 				dir.mkdir();
 
-			File fileUser = new File("server_side/backups/userList.txt");
-			File fileWine = new File("server_side/backups/wineList.txt");
 			Boolean fileBool = fileWine.createNewFile();
+			if (fileBool) {
+				fileIntegrityUpdate(fileWine);
+			}
+			if (!checkFileIntegrity(fileWine)) {
+				System.out.println("O ficheiro foi corrompido");
+				return;
+			}
+
 			// testar
 			readWine = new Scanner(fileWine);
 			writeWine = new FileWriter(fileWine, true);
@@ -222,6 +235,13 @@ public class TintolmarketServer {
 			}
 
 			fileBool = fileUser.createNewFile();
+			if (fileBool) {
+				fileIntegrityUpdate(fileUser);
+			}
+			if (!checkFileIntegrity(fileUser)) {
+				System.out.println("O ficheiro foi corrompido");
+				return;
+			}
 			readUser = new Scanner(fileUser);
 			writeUser = new FileWriter(fileUser, true);
 			if (!fileBool) {
@@ -256,6 +276,52 @@ public class TintolmarketServer {
 
 		}
 		// sSoc.close();
+	}
+
+	private boolean checkFileIntegrity(File file)
+			throws IllegalStateException, IOException, UnrecoverableKeyException, KeyStoreException,
+			NoSuchAlgorithmException, CertificateException, InvalidKeyException, ClassNotFoundException {
+		File integrity = new File("server_side/integrity.txt");
+		if (!file.exists())
+			return false;
+		Map<String, byte[]> map = new HashMap<>();
+		FileInputStream f = new FileInputStream(integrity);
+		ObjectInputStream ob = new ObjectInputStream(f);
+
+		map = (Map<String, byte[]>) ob.readObject();
+
+		Mac mac = Mac.getInstance("HmacSHA256");
+		SecretKeySpec keySpec = new SecretKeySpec("integrity".getBytes(), "HmacSHA256");
+		mac.init(keySpec);
+		byte[] hmac = mac.doFinal(Files.readAllBytes(file.toPath()));
+		if (map.containsKey(file.getName())) {
+			byte[] hmacToCheck = map.get(file.getName());
+			return MessageDigest.isEqual(hmac, hmacToCheck);
+		}
+
+		return false;
+	}
+
+	private void fileIntegrityUpdate(File file)
+			throws IllegalStateException, IOException, UnrecoverableKeyException, KeyStoreException,
+			NoSuchAlgorithmException, CertificateException, InvalidKeyException, ClassNotFoundException {
+		File integrity = new File("server_side/integrity.txt");
+		boolean it = integrity.createNewFile();
+		Map<String, byte[]> map = new HashMap<>();
+		if (integrity.length() > 0) {
+			FileInputStream f = new FileInputStream(integrity);
+			ObjectInputStream ob = new ObjectInputStream(f);
+			map = (Map<String, byte[]>) ob.readObject();
+		}
+
+		Mac mac = Mac.getInstance("HmacSHA256");
+		SecretKeySpec keySpec = new SecretKeySpec("integrity".getBytes(), "HmacSHA256");
+		mac.init(keySpec);
+		byte[] hmac = mac.doFinal(Files.readAllBytes(file.toPath()));
+		map.put(file.getName(), hmac);
+		FileOutputStream fot = new FileOutputStream(integrity);
+		ObjectOutputStream out = new ObjectOutputStream(fot);
+		out.writeObject(map);
 	}
 
 	// Threads utilizadas para comunicacao com os clientes
@@ -388,7 +454,8 @@ public class TintolmarketServer {
 
 		private Boolean authenticate(String user) throws ClassNotFoundException, SignatureException,
 				InvalidKeyException, InvalidKeySpecException, NoSuchAlgorithmException, CertificateException,
-				NoSuchPaddingException, InvalidAlgorithmParameterException {
+				NoSuchPaddingException, InvalidAlgorithmParameterException, UnrecoverableKeyException,
+				IllegalStateException, KeyStoreException {
 
 			try {
 				decrypt();
@@ -450,11 +517,16 @@ public class TintolmarketServer {
 					br.close();
 					myReader.close();
 					myWriter.close();
+					fileIntegrityUpdate(fileCert);
 					encrypt();
 				} else {
 					byte[] recivedNonce = (byte[]) inStream.readObject();
 					Signature s = Signature.getInstance("MD5withRSA");
 					File certFile = new File(found[1]);
+					if (!checkFileIntegrity(certFile)) {
+						System.out.println("O ficheiro esta corrompido");
+						return false;
+					}
 					FileInputStream fis = new FileInputStream(certFile);
 					CertificateFactory cf = CertificateFactory.getInstance("X.509");
 					Certificate cert = cf.generateCertificate(fis);
@@ -478,6 +550,7 @@ public class TintolmarketServer {
 					userList.add(currentUser);
 					writeUser.append(currentUser.serialize() + "\n");
 					writeUser.flush();
+					fileIntegrityUpdate(fileUser);
 				} else {
 					currentUser = userList.stream()
 							.filter(us -> us.getName().equals(user))
@@ -500,9 +573,13 @@ public class TintolmarketServer {
 				throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException,
 				InvalidAlgorithmParameterException, CertificateException, IllegalBlockSizeException,
 				BadPaddingException, InvalidKeySpecException, SignatureException, UnrecoverableKeyException,
-				KeyStoreException {
+				KeyStoreException, IllegalStateException, ClassNotFoundException, IOException {
 			List<String> lines;
 			File fUser = new File("server_side/backups/userList.txt");
+			if (!checkFileIntegrity(fUser)) {
+				System.out.println("O ficheiro esta corrompido");
+				return;
+			}
 			while (true) {
 				String command = null;
 				try {
@@ -552,6 +629,10 @@ public class TintolmarketServer {
 
 							s = Signature.getInstance("MD5withRSA");
 							certFile = new File("server_side/usersCert/" + currentUser.getName() + ".cert");
+							if (!checkFileIntegrity(certFile)) {
+								System.out.println("O ficheiro esta corrompido");
+								return;
+							}
 							fis = new FileInputStream(certFile);
 							cf = CertificateFactory.getInstance("X.509");
 							cert = cf.generateCertificate(fis);
@@ -595,7 +676,7 @@ public class TintolmarketServer {
 									break;
 								}
 							}
-
+							fileIntegrityUpdate(fUser);
 							break;
 						case "v":
 						case "view":
@@ -609,6 +690,10 @@ public class TintolmarketServer {
 								for (File file : new File("server_side/wineImages/").listFiles()) {
 									if (file.getName().split("\\.")[0].equals(wineName)) {
 										f = file;
+										if (!checkFileIntegrity(f)) {
+											System.out.println("O ficheiro esta corrompido");
+											return;
+										}
 										break;
 									}
 								}
@@ -648,6 +733,10 @@ public class TintolmarketServer {
 
 							s = Signature.getInstance("MD5withRSA");
 							certFile = new File("server_side/usersCert/" + currentUser.getName() + ".cert");
+							if (!checkFileIntegrity(certFile)) {
+								System.out.println("O ficheiro esta corrompido");
+								return;
+							}
 							fis = new FileInputStream(certFile);
 							cf = CertificateFactory.getInstance("X.509");
 							cert = cf.generateCertificate(fis);
@@ -698,6 +787,7 @@ public class TintolmarketServer {
 												lines.add(seller.serialize());
 												lines.add(currentUser.serialize());
 												Files.write(fUser.toPath(), lines);
+												fileIntegrityUpdate(fUser);
 											} else {
 												outStream.writeObject(
 														"A quantidade de unidades requisitadas é superior ao stock disponível");
@@ -735,6 +825,10 @@ public class TintolmarketServer {
 							outStream.writeObject("classificacao efetuada com sucesso");
 							// backup
 							File fWine = new File("server_side/backups/wineList.txt");
+							if (!checkFileIntegrity(fWine)) {
+								System.out.println("O ficheiro esta corrompido");
+								return;
+							}
 							lines = Files.readAllLines(fWine.toPath());
 
 							for (Iterator<String> iterator = lines.iterator(); iterator.hasNext();) {
@@ -747,7 +841,7 @@ public class TintolmarketServer {
 
 							lines.add(tempWine.serialize());
 							Files.write(fWine.toPath(), lines);
-
+							fileIntegrityUpdate(fWine);
 							break;
 						case "t":
 						case "talk":
@@ -765,6 +859,10 @@ public class TintolmarketServer {
 							for (String string : sc) {
 								if (string.split(":")[0].equals(user)) {
 									certFile = new File(string.split(":")[1]);
+									if (!checkFileIntegrity(certFile)) {
+										System.out.println("O ficheiro esta corrompido");
+										return;
+									}
 									fis = new FileInputStream(certFile);
 									cf = CertificateFactory.getInstance("X.509");
 									cert = cf.generateCertificate(fis);
@@ -795,6 +893,7 @@ public class TintolmarketServer {
 							}
 							lines.add(tempUser.serialize());
 							Files.write(fUser.toPath(), lines);
+							fileIntegrityUpdate(fUser);
 							break;
 						case "r":
 						case "read":
@@ -813,6 +912,7 @@ public class TintolmarketServer {
 
 							lines.add(currentUser.serialize());
 							Files.write(fUser.toPath(), lines);
+							fileIntegrityUpdate(fUser);
 							break;
 						case "l":
 						case "list":
@@ -827,7 +927,55 @@ public class TintolmarketServer {
 			}
 		}
 
-		private void add(String wine, byte[] image, String extensao) throws IOException {
+		private boolean checkFileIntegrity(File file)
+				throws IllegalStateException, IOException, UnrecoverableKeyException, KeyStoreException,
+				NoSuchAlgorithmException, CertificateException, InvalidKeyException, ClassNotFoundException {
+			File integrity = new File("server_side/integrity.txt");
+			if (!file.exists())
+				return false;
+			Map<String, byte[]> map = new HashMap<>();
+			FileInputStream f = new FileInputStream(integrity);
+			ObjectInputStream ob = new ObjectInputStream(f);
+
+			map = (Map<String, byte[]>) ob.readObject();
+
+			Mac mac = Mac.getInstance("HmacSHA256");
+			SecretKeySpec keySpec = new SecretKeySpec("integrity".getBytes(), "HmacSHA256");
+			mac.init(keySpec);
+			byte[] hmac = mac.doFinal(Files.readAllBytes(file.toPath()));
+			if (map.containsKey(file.getName())) {
+				byte[] hmacToCheck = map.get(file.getName());
+				return MessageDigest.isEqual(hmac, hmacToCheck);
+			}
+
+			return false;
+		}
+
+		private void fileIntegrityUpdate(File file)
+				throws IllegalStateException, IOException, UnrecoverableKeyException, KeyStoreException,
+				NoSuchAlgorithmException, CertificateException, InvalidKeyException, ClassNotFoundException {
+			File integrity = new File("server_side/integrity.txt");
+			boolean it = integrity.createNewFile();
+			Map<String, byte[]> map = new HashMap<>();
+			if (integrity.length() > 0) {
+				FileInputStream f = new FileInputStream(integrity);
+				ObjectInputStream ob = new ObjectInputStream(f);
+				map = (Map<String, byte[]>) ob.readObject();
+			}
+
+			Mac mac = Mac.getInstance("HmacSHA256");
+			SecretKeySpec keySpec = new SecretKeySpec("integrity".getBytes(), "HmacSHA256");
+			mac.init(keySpec);
+			byte[] hmac = mac.doFinal(Files.readAllBytes(file.toPath()));
+			map.put(file.getName(), hmac);
+			FileOutputStream fot = new FileOutputStream(integrity);
+			ObjectOutputStream out = new ObjectOutputStream(fot);
+			out.writeObject(map);
+		}
+
+		private void add(String wine, byte[] image, String extensao)
+				throws IOException, UnrecoverableKeyException, InvalidKeyException, IllegalStateException,
+				KeyStoreException, NoSuchAlgorithmException, CertificateException, ClassNotFoundException {
 			BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(image));
 			String pathUser = "server_side/wineImages/";
 
@@ -839,9 +987,11 @@ public class TintolmarketServer {
 			ImageIO.write(bufferedImage, extensao, foto);
 
 			foto.createNewFile();
+			fileIntegrityUpdate(foto);
 			Wine tempWine = new Wine(wine);
 			writeWine.append(tempWine.serialize() + "\n");
 			writeWine.flush();
+			fileIntegrityUpdate(fileWine);
 			wineList.add(tempWine);
 		}
 

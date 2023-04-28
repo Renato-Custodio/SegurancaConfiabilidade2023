@@ -13,13 +13,13 @@ Grupo SegC-002
 		1.1.1. Compilar o Servidor: "javac ./server_side/TintolMarketServer.java";
 		1.1.2. Compilar o Cliente: "javac ./client_side/TintolMarket.java";
 		
-		1.1.3. Executar o Servidor: "java ./server_side/TintolMarketServer <port>";
-		1.1.4. Executar o Cliente: "java ./client_side/TintolMarket 127.0.0.1:<port> <userID> <password>";
+		1.1.3. Executar o Servidor: "java ./server_side/TintolMarketServer <port> <password-cifra> <keystore> <password-keystore>";
+		1.1.4. Executar o Cliente: "java ./client_side/TintolMarket <serverAddress> <truststore> <keystore> <password-keystore> <userID>";
 		OU "java ./client_side/TintolMarket 127.0.0.1:<port> <username>";
 		
 		Correr o JAR
-		Servidor:  java -jar TintolMarketServer.jar <port>
-		Cliente: java -jar TintolMarket.jar <serverAddress> <userID> [password]
+		Servidor:  java -jar TintolMarketServer.jar <port> <password-cifra> <keystore> <password-keystore>
+		Cliente: java -jar TintolMarket.jar <serverAddress> <truststore> <keystore> <password-keystore> <userID>
 
 
 2. Limitacoes
