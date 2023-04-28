@@ -13,15 +13,22 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.AlgorithmParameters;
+import java.security.DigestInputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -55,14 +62,17 @@ public class TintolmarketServer {
 	List<User> userList = new ArrayList<>();
 	List<Wine> wineList = new ArrayList<>();
 
-	Scanner readWine;
-	FileWriter writeWine;
-	Scanner readUser;
-	FileWriter writeUser;
-	String passCifra;
+	private Scanner readWine;
+	private FileWriter writeWine;
+	private Scanner readUser;
+	private FileWriter writeUser;
+	private String passCifra;
+	private String keyStore;
+	private String passKeyStore;
 
 	public static void main(String[] args) throws InvalidKeyException, NumberFormatException, NoSuchAlgorithmException,
-			InvalidKeySpecException, NoSuchPaddingException {
+			InvalidKeySpecException, NoSuchPaddingException, ClassNotFoundException, SignatureException,
+			CertificateException {
 		// a pass de tudo é 123456
 		System.out.println("servidor: main");
 		TintolmarketServer server = new TintolmarketServer();
@@ -73,9 +83,11 @@ public class TintolmarketServer {
 			if (args.length == 3) {
 				setArgs = 1;
 			}
+			server.keyStore = args[2 - setArgs];
+			server.passKeyStore = args[3 - setArgs];
 
-			System.setProperty("javax.net.ssl.keyStore", args[2 - setArgs]);
-			System.setProperty("javax.net.ssl.keyStorePassword", args[3 - setArgs]);
+			System.setProperty("javax.net.ssl.keyStore", server.keyStore);
+			System.setProperty("javax.net.ssl.keyStorePassword", server.passKeyStore);
 
 			server.passCifra = args[1 - setArgs];
 
@@ -102,8 +114,71 @@ public class TintolmarketServer {
 		return args.length >= 3 && f.exists();
 	}
 
+	private boolean verifyBlocks() throws IOException, ClassNotFoundException, SignatureException,
+			InvalidKeyException, CertificateException, NoSuchAlgorithmException {
+		File dir = new File("server_side/log");
+		if (!dir.exists())
+			return true;
+
+		File[] files = dir.listFiles();
+
+		if (files.length == 0)
+			return true;
+
+		byte[] hashToVerify = null;
+		for (int numFile = files.length - 1; numFile >= 0; numFile--) {
+			File file = files[numFile];
+			FileInputStream fis = new FileInputStream(file);
+			ObjectInputStream oIn = new ObjectInputStream(fis);
+			byte[] hash = (byte[]) oIn.readObject(); // hash
+			long id = (long) oIn.readObject(); // id
+			long nTrx = (long) oIn.readObject(); // nTrx
+			List<byte[]> transacoes = new ArrayList<>();
+			for (int i = 0; i < nTrx; i++) {
+				transacoes.add((byte[]) oIn.readObject()); // all transactions
+			}
+			// verify integrity
+			if (nTrx == 5) {
+				byte[] signature = (byte[]) oIn.readObject(); // signature
+				FileInputStream kfile = new FileInputStream("server_side/key/Server.cer"); // certificate
+				CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+				Certificate certificate = certificateFactory.generateCertificate(kfile);
+				Signature s = Signature.getInstance("MD5withRSA");
+				s.initVerify(certificate.getPublicKey());
+				s.update(hash);
+				s.update((byte) id);
+				s.update((byte) (nTrx));
+				for (int i = 0; i < nTrx; i++) {
+					s.update(transacoes.get(i));
+				}
+
+				if (!s.verify(signature)) {
+					return false;
+				}
+			}
+			MessageDigest digest = MessageDigest.getInstance("SHA-256");
+			if (hashToVerify != null) {
+				// verify hash
+				FileInputStream f = new FileInputStream(file);
+				DigestInputStream dis = new DigestInputStream(f, digest);
+
+				while (dis.read() != -1) {
+					// The digest is updated automatically as you read the file
+				}
+				dis.close();
+				// Get the final hash (digest) value
+				if (!MessageDigest.isEqual(digest.digest(), hashToVerify)) {
+					return false;
+				}
+			}
+			hashToVerify = hash;
+		}
+		return true;
+	}
+
 	public void startServer(int port)
-			throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException {
+			throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException,
+			ClassNotFoundException, SignatureException, CertificateException {
 
 		SSLServerSocket sSoc = null;
 
@@ -136,6 +211,8 @@ public class TintolmarketServer {
 					userList.add(User.deserialize(readUser.nextLine(), wineList));
 				}
 			}
+
+			System.out.println(verifyBlocks());
 
 			// create secure connection
 			ServerSocketFactory ssf = SSLServerSocketFactory.getDefault();
@@ -199,7 +276,7 @@ public class TintolmarketServer {
 			} catch (IOException | ClassNotFoundException | InvalidKeyException | SignatureException
 					| InvalidKeySpecException | NoSuchAlgorithmException | CertificateException
 					| NoSuchPaddingException | InvalidAlgorithmParameterException | IllegalBlockSizeException
-					| BadPaddingException e) {
+					| BadPaddingException | UnrecoverableKeyException | KeyStoreException e) {
 				e.printStackTrace();
 			}
 		}
@@ -348,7 +425,7 @@ public class TintolmarketServer {
 					FileOutputStream writeCert = new FileOutputStream(fileCert);
 					writeCert.write(certificate.getEncoded());
 					myWriter.write(user + ":"
-							+ fileCert.getAbsolutePath() + "\n");
+							+ fileCert.getPath() + "\n");
 					br.close();
 					myReader.close();
 					myWriter.close();
@@ -356,7 +433,7 @@ public class TintolmarketServer {
 				} else {
 					byte[] recivedNonce = (byte[]) inStream.readObject();
 					Signature s = Signature.getInstance("MD5withRSA");
-					File certFile = new File(found[1] + ":" + found[2]);
+					File certFile = new File(found[1]);
 					FileInputStream fis = new FileInputStream(certFile);
 					CertificateFactory cf = CertificateFactory.getInstance("X.509");
 					Certificate cert = cf.generateCertificate(fis);
@@ -401,7 +478,8 @@ public class TintolmarketServer {
 		private void receiveCommands(ObjectInputStream inStream, ObjectOutputStream outStream)
 				throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException,
 				InvalidAlgorithmParameterException, CertificateException, IllegalBlockSizeException,
-				BadPaddingException, InvalidKeySpecException, SignatureException {
+				BadPaddingException, InvalidKeySpecException, SignatureException, UnrecoverableKeyException,
+				KeyStoreException {
 			List<String> lines;
 			File fUser = new File("server_side/backups/userList.txt");
 			while (true) {
@@ -481,7 +559,7 @@ public class TintolmarketServer {
 							outStream.writeObject(
 									quantity + " unidades de vinho " + wineName + " posto à venda a " + value + ".");
 							// registo no log
-
+							registerTransaction(signature);
 							// backup
 							lines = Files.readAllLines(fUser.toPath());
 							for (String tempString : lines) {
@@ -578,7 +656,7 @@ public class TintolmarketServer {
 
 												outStream.writeObject("Compra efetuada com sucesso");
 												// registo no log
-
+												registerTransaction(sign);
 												// backup
 												lines = Files.readAllLines(fUser.toPath());
 												for (Iterator<String> iterator = lines.iterator(); iterator
@@ -736,18 +814,123 @@ public class TintolmarketServer {
 			wineList.add(tempWine);
 		}
 
-		private void registerTransaction() throws IOException {
+		// problema os bytes n tao a ficar bem guardados
+		private void registerTransaction(byte[] transaction)
+				throws IOException, NoSuchAlgorithmException, ClassNotFoundException, CertificateException,
+				KeyStoreException, UnrecoverableKeyException, InvalidKeyException, SignatureException {
+
+			File[] files = new File("server_side/log").listFiles();
+			File currentFile = null;
+			if (files == null) {
+				currentFile = createBlock();
+			} else {
+				currentFile = files[files.length - 1];
+			}
+
+			// open reader
+			FileInputStream fis = new FileInputStream(currentFile);
+			ObjectInputStream oIn = new ObjectInputStream(fis);
+			//
+			// read block
+			byte[] hash = (byte[]) oIn.readObject(); // hash
+			long id = (long) oIn.readObject(); // id
+			long nTrx = (long) oIn.readObject(); // nTrx
+			System.out.println(nTrx); // tirar
+
+			List<byte[]> transacoes = new ArrayList<>();
+			for (int i = 0; i < nTrx; i++) {
+				transacoes.add((byte[]) oIn.readObject()); // all transactions
+			}
+
+			oIn.close();
+			fis.close();
+			// is block full ?
+			if (nTrx == 5L) {
+				// create new block
+				createBlock();
+				registerTransaction(transaction);
+				return;
+			}
+			// open writter
+			FileOutputStream fot = new FileOutputStream(currentFile);
+			ObjectOutputStream oOut = new ObjectOutputStream(fot);
+			//
+			oOut.writeObject(hash);
+			oOut.writeObject(id);
+			oOut.writeObject(nTrx + 1);
+			for (int i = 0; i < nTrx; i++) {
+				oOut.writeObject(transacoes.get(i));
+			}
+			oOut.writeObject(transaction);
+			if (nTrx == 4) {
+				FileInputStream kfile = new FileInputStream(keyStore); // keystore
+				KeyStore kstore = KeyStore.getInstance("JKS");
+				kstore.load(kfile, passKeyStore.toCharArray());
+				PrivateKey privateKey = (PrivateKey) kstore.getKey("server", passKeyStore.toCharArray());
+				Signature s = Signature.getInstance("MD5withRSA");
+				s.initSign(privateKey);
+				s.update(hash);
+				s.update((byte) id);
+				s.update((byte) (nTrx + 1));
+				for (int i = 0; i < nTrx; i++) {
+					s.update(transacoes.get(i));
+				}
+				s.update(transaction);
+				oOut.writeObject(s.sign());
+			}
+			oOut.close();
+			fot.close();
+		}
+
+		private File createBlock() throws IOException, NoSuchAlgorithmException {
 			File dir = new File("server_side/log");
 			if (!dir.exists())
 				dir.mkdir();
 
 			File[] files = dir.listFiles();
+			int numFile = 0;
+			if (files.length == 0) {
+				numFile = 1;
+			} else {
+				String string = files[files.length - 1].getName();
+				String num = string.substring(string.indexOf("_") + 1, string.indexOf("."));
+				numFile = Integer.valueOf(num) + 1;
+			}
 
-			
-
-			File file = new File("server_side/log/block_" + ".blk");
+			File file = new File("server_side/log/block_" + numFile + ".blk");
 			file.createNewFile();
 
+			FileOutputStream fis = new FileOutputStream(file);
+			ObjectOutputStream oOut = new ObjectOutputStream(fis);
+
+			String string = file.getName();
+			int num = Integer.parseInt(string.substring(string.indexOf("_") + 1, string.indexOf(".")));
+			MessageDigest digest = MessageDigest.getInstance("SHA-256");
+			if (num == 1) {
+				byte[] zeroHash = digest.digest("".getBytes(StandardCharsets.UTF_8));
+				oOut.writeObject(zeroHash);
+			} else {
+				int i = num - 1;
+				File previousBlock = new File(
+						file.toPath().toString().replace(Integer.toString(num), Integer.toString(i)));
+				FileInputStream is = new FileInputStream(previousBlock);
+
+				// Create a DigestInputStream to read the file and update the digest
+				DigestInputStream dis = new DigestInputStream(is, digest);
+
+				while (dis.read() != -1) {
+					// The digest is updated automatically as you read the file
+				}
+				dis.close();
+				// Get the final hash (digest) value
+				byte[] hash = digest.digest();
+				oOut.writeObject(hash);
+			}
+			oOut.writeObject((long) num);
+			oOut.writeObject(0L);
+			fis.close();
+			oOut.close();
+			return file;
 		}
 	}
 }
