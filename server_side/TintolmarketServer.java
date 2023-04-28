@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -547,7 +548,7 @@ public class TintolmarketServer {
 								break;
 							}
 							// verificao da assinatura
-							log = wineName + "," + value + "," + quantity + "," + currentUser.getName();
+							log = "sell," + wineName + "," + value + "," + quantity + "," + currentUser.getName();
 
 							s = Signature.getInstance("MD5withRSA");
 							certFile = new File("server_side/usersCert/" + currentUser.getName() + ".cert");
@@ -659,7 +660,7 @@ public class TintolmarketServer {
 								WineSell sellWine = seller.getWine(wineName);
 								outStream.writeObject(sellWine.getValue());
 								byte[] sign = (byte[]) inStream.readObject();
-								log = wineName + "," + quantity + "," + sellWine.getValue() + ","
+								log = "buy," + wineName + "," + quantity + "," + sellWine.getValue() + ","
 										+ currentUser.getName();
 								s.update(log.getBytes());
 								if (s.verify(sign)) {
@@ -813,6 +814,10 @@ public class TintolmarketServer {
 							lines.add(currentUser.serialize());
 							Files.write(fUser.toPath(), lines);
 							break;
+						case "l":
+						case "list":
+							outStream.writeObject(getAllTransactions());
+							break;
 						default:
 							return;
 					}
@@ -838,6 +843,36 @@ public class TintolmarketServer {
 			writeWine.append(tempWine.serialize() + "\n");
 			writeWine.flush();
 			wineList.add(tempWine);
+		}
+
+		private String getAllTransactions() throws ClassNotFoundException, IOException {
+			File dir = new File("server_side/log");
+			if (!dir.exists())
+				return null;
+
+			File[] files = dir.listFiles();
+
+			if (files.length == 0)
+				return null;
+
+			for (File file : files) {
+				FileInputStream fis = new FileInputStream(file);
+				ObjectInputStream oIn = new ObjectInputStream(fis);
+				byte[] hash = (byte[]) oIn.readObject(); // hash
+				long id = (long) oIn.readObject(); // id
+				long nTrx = (long) oIn.readObject(); // nTrx
+				List<List<byte[]>> transacoes = new ArrayList<>();
+				for (int i = 0; i < nTrx; i++) {
+					transacoes.add((List<byte[]>) oIn.readObject()); // all transactions
+				}
+
+				for (List<byte[]> it : transacoes) {
+					String[] data = new String(it.get(0)).split(",");
+
+				}
+
+			}
+			return null;
 		}
 
 		// problema os bytes n tao a ficar bem guardados

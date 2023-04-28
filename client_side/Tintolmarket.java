@@ -208,7 +208,8 @@ public class Tintolmarket {
                             out.writeObject(Integer.parseInt(command[3]));
 
                             // signature for log
-                            String log = command[1] + "," + Double.parseDouble(command[2]) + "," + command[3] + ","
+                            String log = "sell," + command[1] + "," + Double.parseDouble(command[2]) + "," + command[3]
+                                    + ","
                                     + this.userID;
                             FileInputStream kfile = new FileInputStream(keyStore); // keystore
                             KeyStore kstore = KeyStore.getInstance("JKS");
@@ -269,7 +270,8 @@ public class Tintolmarket {
                             out.writeObject(Integer.parseInt(command[3])); // quantity
 
                             // signature for log
-                            String log = command[1] + "," + command[3] + "," + in.readObject() + "," + this.userID;
+                            String log = "buy," + command[1] + "," + command[3] + "," + in.readObject() + ","
+                                    + this.userID;
                             FileInputStream kfile = new FileInputStream(keyStore); // keystore
                             KeyStore kstore = KeyStore.getInstance("JKS");
                             kstore.load(kfile, pass.toCharArray());
@@ -353,6 +355,18 @@ public class Tintolmarket {
                                 }
                             }
                             System.out.println(sb.toString());
+                        }
+                        break;
+                    case "l":
+                    case "list":
+                        // pedido ao server
+                        out.writeObject(command[0]);
+                        // resposta do server
+                        String list = (String) in.readObject();
+                        if (list == null) {
+                            System.out.println("Ainda nao houve nenhuma transacao");
+                        } else {
+                            System.out.println(list);
                         }
                         break;
                     case "q":
