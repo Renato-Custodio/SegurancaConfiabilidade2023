@@ -764,7 +764,7 @@ public class TintolmarketServer {
 							PublicKey key = null;
 							for (String string : sc) {
 								if (string.split(":")[0].equals(user)) {
-									certFile = new File(string.split(":")[1] + ":" + string.split(":")[2]);
+									certFile = new File(string.split(":")[1]);
 									fis = new FileInputStream(certFile);
 									cf = CertificateFactory.getInstance("X.509");
 									cert = cf.generateCertificate(fis);
