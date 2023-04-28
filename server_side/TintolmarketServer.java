@@ -157,11 +157,11 @@ public class TintolmarketServer {
 				if (!s.verify(signature)) {
 					return false;
 				}
-
 			}
+			// verify hash
 			MessageDigest digest = MessageDigest.getInstance("SHA-256");
 			if (hashToVerify != null) {
-				// verify hash
+
 				FileInputStream f = new FileInputStream(file);
 				DigestInputStream dis = new DigestInputStream(f, digest);
 
@@ -855,6 +855,7 @@ public class TintolmarketServer {
 			if (files.length == 0)
 				return null;
 
+			StringBuilder sb = new StringBuilder();
 			for (File file : files) {
 				FileInputStream fis = new FileInputStream(file);
 				ObjectInputStream oIn = new ObjectInputStream(fis);
@@ -869,13 +870,19 @@ public class TintolmarketServer {
 				for (List<byte[]> it : transacoes) {
 					String[] data = new String(it.get(0)).split(",");
 
+					if (data[0].equals("sell")) {
+						sb.append(data[0] + " : Foram postas " + data[2] + " unidades do vinho " + data[1]
+								+ " custando cada um " + data[3] + " pelo utilizador " + data[4] + "\n");
+					} else {
+						sb.append(data[0] + " : Foram vendidas " + data[2] + " unidades do vinho " + data[1]
+								+ " custando cada um " + data[3] + " e compradas pelo o utilizador " + data[4] + "\n");
+					}
 				}
 
 			}
-			return null;
+			return sb.toString();
 		}
 
-		// problema os bytes n tao a ficar bem guardados
 		private void registerTransaction(List<byte[]> transaction)
 				throws IOException, NoSuchAlgorithmException, ClassNotFoundException, CertificateException,
 				KeyStoreException, UnrecoverableKeyException, InvalidKeyException, SignatureException {
@@ -896,7 +903,6 @@ public class TintolmarketServer {
 			byte[] hash = (byte[]) oIn.readObject(); // hash
 			long id = (long) oIn.readObject(); // id
 			long nTrx = (long) oIn.readObject(); // nTrx
-			System.out.println(nTrx); // tirar
 
 			List<List<byte[]>> transacoes = new ArrayList<>();
 			for (int i = 0; i < nTrx; i++) {

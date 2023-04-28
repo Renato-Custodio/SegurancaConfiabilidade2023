@@ -409,6 +409,7 @@ public class Tintolmarket {
         System.out.println("\tclassify <wine> <stars>");
         System.out.println("\ttalk <user> <message>");
         System.out.println("\tread");
+        System.out.println("\tlist");
         System.out.println("\tquit");
     }
 
