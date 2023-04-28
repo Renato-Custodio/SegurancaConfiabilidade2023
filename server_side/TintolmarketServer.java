@@ -133,9 +133,9 @@ public class TintolmarketServer {
 			byte[] hash = (byte[]) oIn.readObject(); // hash
 			long id = (long) oIn.readObject(); // id
 			long nTrx = (long) oIn.readObject(); // nTrx
-			List<byte[]> transacoes = new ArrayList<>();
+			List<List<byte[]>> transacoes = new ArrayList<>();
 			for (int i = 0; i < nTrx; i++) {
-				transacoes.add((byte[]) oIn.readObject()); // all transactions
+				transacoes.add((List<byte[]>) oIn.readObject()); // all transactions
 			}
 			// verify integrity
 			if (nTrx == 5) {
@@ -149,12 +149,14 @@ public class TintolmarketServer {
 				s.update((byte) id);
 				s.update((byte) (nTrx));
 				for (int i = 0; i < nTrx; i++) {
-					s.update(transacoes.get(i));
+					s.update(transacoes.get(i).get(0));
+					s.update(transacoes.get(i).get(1));
 				}
 
 				if (!s.verify(signature)) {
 					return false;
 				}
+
 			}
 			MessageDigest digest = MessageDigest.getInstance("SHA-256");
 			if (hashToVerify != null) {
@@ -168,6 +170,21 @@ public class TintolmarketServer {
 				dis.close();
 				// Get the final hash (digest) value
 				if (!MessageDigest.isEqual(digest.digest(), hashToVerify)) {
+					return false;
+				}
+			}
+
+			// verify signatures
+			for (List<byte[]> it : transacoes) {
+				String[] data = new String(it.get(0)).split(",");
+				String user = data[data.length - 1];
+				FileInputStream f = new FileInputStream("server_side/usersCert/" + user + ".cert");
+				CertificateFactory cf = CertificateFactory.getInstance("X.509");
+				Certificate cert = cf.generateCertificate(f);
+				Signature s = Signature.getInstance("MD5withRSA");
+				s.initVerify(cert.getPublicKey());
+				s.update(it.get(0));
+				if (!s.verify(it.get(1))) {
 					return false;
 				}
 			}
@@ -212,7 +229,10 @@ public class TintolmarketServer {
 				}
 			}
 
-			System.out.println(verifyBlocks());
+			if (!verifyBlocks()) {
+				System.out.println("A blockchain foi corrompida");
+				return;
+			}
 
 			// create secure connection
 			ServerSocketFactory ssf = SSLServerSocketFactory.getDefault();
@@ -559,7 +579,10 @@ public class TintolmarketServer {
 							outStream.writeObject(
 									quantity + " unidades de vinho " + wineName + " posto à venda a " + value + ".");
 							// registo no log
-							registerTransaction(signature);
+							List<byte[]> trans = new ArrayList<>();
+							trans.add(log.getBytes());
+							trans.add(signature);
+							registerTransaction(trans);
 							// backup
 							lines = Files.readAllLines(fUser.toPath());
 							for (String tempString : lines) {
@@ -656,7 +679,10 @@ public class TintolmarketServer {
 
 												outStream.writeObject("Compra efetuada com sucesso");
 												// registo no log
-												registerTransaction(sign);
+												List<byte[]> tran = new ArrayList<>();
+												tran.add(log.getBytes());
+												tran.add(sign);
+												registerTransaction(tran);
 												// backup
 												lines = Files.readAllLines(fUser.toPath());
 												for (Iterator<String> iterator = lines.iterator(); iterator
@@ -815,7 +841,7 @@ public class TintolmarketServer {
 		}
 
 		// problema os bytes n tao a ficar bem guardados
-		private void registerTransaction(byte[] transaction)
+		private void registerTransaction(List<byte[]> transaction)
 				throws IOException, NoSuchAlgorithmException, ClassNotFoundException, CertificateException,
 				KeyStoreException, UnrecoverableKeyException, InvalidKeyException, SignatureException {
 
@@ -837,9 +863,9 @@ public class TintolmarketServer {
 			long nTrx = (long) oIn.readObject(); // nTrx
 			System.out.println(nTrx); // tirar
 
-			List<byte[]> transacoes = new ArrayList<>();
+			List<List<byte[]>> transacoes = new ArrayList<>();
 			for (int i = 0; i < nTrx; i++) {
-				transacoes.add((byte[]) oIn.readObject()); // all transactions
+				transacoes.add((List<byte[]>) oIn.readObject()); // all transactions
 			}
 
 			oIn.close();
@@ -873,9 +899,11 @@ public class TintolmarketServer {
 				s.update((byte) id);
 				s.update((byte) (nTrx + 1));
 				for (int i = 0; i < nTrx; i++) {
-					s.update(transacoes.get(i));
+					s.update(transacoes.get(i).get(0));
+					s.update(transacoes.get(i).get(1));
 				}
-				s.update(transaction);
+				s.update(transaction.get(0));
+				s.update(transaction.get(1));
 				oOut.writeObject(s.sign());
 			}
 			oOut.close();
